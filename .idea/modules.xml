@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/backend/services/config-server/config-server.iml" filepath="$PROJECT_DIR$/backend/services/config-server/config-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/services/discovry-server/discovry-server.iml" filepath="$PROJECT_DIR$/backend/services/discovry-server/discovry-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/services/gateway/gateway.iml" filepath="$PROJECT_DIR$/backend/services/gateway/gateway.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/gestion-cabinet-medical.iml" filepath="$PROJECT_DIR$/.idea/gestion-cabinet-medical.iml" />
+    </modules>
+  </component>
+</project>
