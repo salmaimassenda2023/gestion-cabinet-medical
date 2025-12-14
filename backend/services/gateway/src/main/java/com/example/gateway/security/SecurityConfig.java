@@ -1,6 +1,5 @@
 package com.example.gateway.security;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,6 +20,14 @@ public class SecurityConfig {
                 .authorizeExchange(exchange -> exchange
                         // ✅ CRITIQUE : Autoriser OPTIONS sans JWT
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ✅ Endpoint de bootstrap PUBLIC (sans authentification)
+                        .pathMatchers("/api/utilisateur/users/bootstrap/**").permitAll()
+
+                        // ✅ Endpoints publics pour Swagger/Actuator (si nécessaire)
+                        .pathMatchers("/actuator/**", "/api-docs/**", "/swagger-ui/**").permitAll()
+
+                        // ✅ Tous les autres endpoints nécessitent une authentification
                         .pathMatchers("/api/**").authenticated()
                         .anyExchange().authenticated()
                 )

@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/services/config-server/config-server.iml" filepath="$PROJECT_DIR$/services/config-server/config-server.iml" />
       <module fileurl="file://$PROJECT_DIR$/services/discovry-server/discovry-server.iml" filepath="$PROJECT_DIR$/services/discovry-server/discovry-server.iml" />
       <module fileurl="file://$PROJECT_DIR$/services/gateway/gateway.iml" filepath="$PROJECT_DIR$/services/gateway/gateway.iml" />
+      <module fileurl="file://$PROJECT_DIR$/services/utilisateur-service/utilisateur-service.iml" filepath="$PROJECT_DIR$/services/utilisateur-service/utilisateur-service.iml" />
     </modules>
   </component>
 </project>
