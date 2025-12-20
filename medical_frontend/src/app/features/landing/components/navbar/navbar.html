@@ -1,0 +1,35 @@
+<nav class="navbar" [class.scrolled]="isScrolled()">
+  <div class="navbar-container">
+    <a href="#home" class="logo-link">
+      <img alt="Clinics Flow" class="logo-img" src="assets/logo.png" />
+    </a>
+
+    <!-- Desktop Navigation -->
+    <div class="desktop-nav">
+      <a *ngFor="let item of navItems" [href]="item.href" class="nav-link">
+        {{ item.label }}
+      </a>
+    </div>
+
+    <div class="desktop-actions">
+      <button class="btn-primary" routerLink="/onboarding">Get Started</button>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-toggle" (click)="toggleMobileMenu()">
+      <lucide-icon [img]="isMobileMenuOpen() ? XIcon : MenuIcon" [size]="24"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Mobile Navigation -->
+  <div *ngIf="isMobileMenuOpen()" class="mobile-menu">
+    <div class="mobile-nav-items">
+      <a *ngFor="let item of navItems" [href]="item.href" class="nav-link mobile-link" (click)="closeMobileMenu()">
+        {{ item.label }}
+      </a>
+      <div class="mobile-actions">
+        <button class="btn-primary full-width" routerLink="/onboarding">Get Started</button>
+      </div>
+    </div>
+  </div>
+</nav>

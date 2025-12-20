@@ -1,0 +1,53 @@
+<div class="pricing-container animate-fade-in">
+  <div class="pricing-header">
+    <span class="eyebrow">Pricing</span>
+    <h2 class="section-title">
+      Simple, Transparent
+      <span class="text-gradient"> Pricing</span>
+    </h2>
+    <p class="section-description">
+      Choose the plan that fits your practice.
+    </p>
+  </div>
+
+  <div class="pricing-grid">
+    <div *ngFor="let plan of plans" class="pricing-card" [class.popular]="plan.popular">
+
+      <div *ngIf="plan.popular" class="popular-badge">
+        Most Popular
+      </div>
+
+      <div class="card-header">
+        <h3 class="plan-name" [class.text-primary-foreground]="plan.popular">{{ plan.name }}</h3>
+        <p class="plan-description" [class.text-primary-foreground-80]="plan.popular">{{ plan.description }}</p>
+      </div>
+
+      <div class="price-wrapper">
+        <div class="price-row">
+          <span *ngIf="plan.originalPrice" class="original-price">{{ plan.originalPrice }}</span>
+          <span class="price-value">{{ plan.price }}</span>
+          <span class="price-period" [class.text-primary-foreground-80]="plan.popular">{{ plan.period }}</span>
+        </div>
+      </div>
+
+      <ul class="features-list">
+        <li *ngFor="let feature of plan.features" class="feature-item">
+          <div class="check-wrapper" [class.popular-check]="plan.popular">
+            <svg [class.text-primary]="!plan.popular" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span class="feature-text" [class.text-primary-foreground-90]="plan.popular">{{ feature }}</span>
+        </li>
+      </ul>
+
+      <div class="card-footer">
+        <button class="cta-button" [ngClass]="plan.popular ? 'btn-white' : 'btn-primary-gradient'"
+          (click)="navigateToOnboarding()">
+          {{ plan.cta }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,232 @@
+<div class="onboarding-container">
+    <div class="onboarding-card">
+
+        <!-- Header -->
+        <div class="header">
+            <h2 class="title">Clinic Setup</h2>
+            <div class="steps-indicator">
+                <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Personal</span>
+                </div>
+                <div class="line" [class.active]="currentStep > 1"></div>
+                <div class="step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Clinic</span>
+                </div>
+                <div class="line" [class.active]="currentStep > 2"></div>
+                <div class="step" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Services</span>
+                </div>
+                <div class="line" [class.active]="currentStep > 3"></div>
+                <div class="step" [class.active]="currentStep >= 4" [class.completed]="currentStep > 4">
+                    <div class="step-circle">4</div>
+                    <span class="step-label">Payment</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="step-content">
+
+            <!-- Step 1: Personal Info -->
+            <form [formGroup]="personalForm" *ngIf="currentStep === 1" class="form-grid">
+                <h3 class="step-title">Personal Information</h3>
+
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" formControlName="username" placeholder="DrUser123">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" formControlName="password" placeholder="••••••••">
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>First Name</label>
+                        <input type="text" formControlName="firstName" placeholder="John">
+                    </div>
+                    <div class="input-group">
+                        <label>Last Name</label>
+                        <input type="text" formControlName="lastName" placeholder="Doe">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Phone Number</label>
+                    <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000">
+                </div>
+
+                <div class="signature-section">
+                    <label>Signature</label>
+                    <div class="tabs">
+                        <button type="button" class="tab" [class.active]="signatureMode === 'draw'"
+                            (click)="setSignatureMode('draw')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-right: 6px;">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                            </svg> Draw
+                        </button>
+                        <button type="button" class="tab" [class.active]="signatureMode === 'upload'"
+                            (click)="setSignatureMode('upload')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-right: 6px;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg> Upload
+                        </button>
+                    </div>
+
+                    <div class="signature-area" *ngIf="signatureMode === 'draw'">
+                        <canvas #signatureCanvas width="400" height="150" (mousedown)="startDrawing($event)"
+                            (mousemove)="draw($event)" (mouseup)="stopDrawing()" (mouseleave)="stopDrawing()"
+                            (touchstart)="startDrawing($event)" (touchmove)="draw($event)"
+                            (touchend)="stopDrawing()"></canvas>
+                        <button type="button" class="clear-btn" (click)="clearSignature()">Clear</button>
+                    </div>
+
+                    <div class="upload-area" *ngIf="signatureMode === 'upload'">
+                        <input type="file" (change)="onFileSelected($event, 'signature')" accept="image/*">
+                        <div *ngIf="signatureImage" class="preview">
+                            <img [src]="signatureImage" alt="Signature Preview" height="50">
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Step 2: Clinic Info -->
+            <form [formGroup]="clinicForm" *ngIf="currentStep === 2" class="form-grid">
+                <h3 class="step-title">Clinic Details</h3>
+
+                <div class="input-group">
+                    <label>Clinic Name</label>
+                    <input type="text" formControlName="name" placeholder="City Health Clinic">
+                </div>
+
+                <div class="input-group logo-upload">
+                    <label>Clinic Logo</label>
+                    <input type="file" (change)="onFileSelected($event, 'logo')" accept="image/*">
+                    <div *ngIf="logoPreview" class="preview logo-preview">
+                        <img [src]="logoPreview" alt="Logo Preview">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Specialty</label>
+                    <input type="text" formControlName="specialty" placeholder="Cardiology">
+                </div>
+
+                <div class="input-group">
+                    <label>Address</label>
+                    <textarea formControlName="address" rows="2" placeholder="123 Medical Blvd, Suite 100"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>Clinic Phone</label>
+                        <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000">
+                    </div>
+                    <div class="input-group">
+                        <label>Max Patients/Day</label>
+                        <input type="number" formControlName="maxPatients" placeholder="20">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Consultation Duration (mins)</label>
+                    <input type="number" formControlName="consultationTime" placeholder="30">
+                </div>
+            </form>
+
+            <!-- Step 3: Services & Pricing -->
+            <form [formGroup]="servicesForm" *ngIf="currentStep === 3" class="form-grid">
+                <h3 class="step-title">Services & Pricing</h3>
+
+                <div class="input-group">
+                    <label>General Consultation Price ($)</label>
+                    <input type="number" formControlName="generalPrice" placeholder="150">
+                </div>
+
+                <div class="services-list" formArrayName="additionalServices">
+                    <label>Additional Services</label>
+
+                    <div *ngFor="let service of additionalServices.controls; let i=index" [formGroupName]="i"
+                        class="service-row">
+                        <input type="text" formControlName="name" placeholder="Service Name">
+                        <input type="number" formControlName="price" placeholder="Price">
+                        <button type="button" class="remove-btn" (click)="removeService(i)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <button type="button" class="add-btn btn-outline" (click)="addService()">+ Add Service</button>
+                </div>
+            </form>
+
+            <!-- Step 4: Payment -->
+            <form [formGroup]="paymentForm" *ngIf="currentStep === 4" class="form-grid">
+                <h3 class="step-title">Payment Method</h3>
+                <p class="subtitle">Enter your card details for the subscription.</p>
+
+                <div class="input-group">
+                    <label>Name on Card</label>
+                    <input type="text" formControlName="cardName" placeholder="JOHN DOE">
+                </div>
+
+                <div class="input-group">
+                    <label>Card Number</label>
+                    <input type="text" formControlName="cardNumber" maxlength="16" placeholder="0000 0000 0000 0000">
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>Expiry Date</label>
+                        <input type="text" formControlName="expiry" placeholder="MM/YY">
+                    </div>
+                    <div class="input-group">
+                        <label>CVC</label>
+                        <input type="text" formControlName="cvc" maxlength="4" placeholder="123">
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="actions">
+            <button *ngIf="currentStep > 1" (click)="prevStep()" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg> Back
+            </button>
+
+            <div class="spacer"></div>
+
+            <button (click)="nextStep()" class="btn-primary-gradient btn-next">
+                <span *ngIf="currentStep < totalSteps">Next Step</span>
+                <span *ngIf="currentStep === totalSteps">Complete Setup</span>
+                <svg *ngIf="currentStep < totalSteps" class="btn-icon" width="20" height="20" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+                <svg *ngIf="currentStep === totalSteps" class="btn-icon" width="20" height="20" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </button>
+        </div>
+
+    </div>
+</div>
