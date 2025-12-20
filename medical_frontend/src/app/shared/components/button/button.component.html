@@ -1,6 +1,0 @@
-<button [type]="type" class="btn" [class.loading]="loading" [disabled]="disabled || loading" (click)="handleClick()">
-    <span *ngIf="!loading">
-        <ng-content></ng-content>
-    </span>
-    <span *ngIf="loading">Processing...</span>
-</button>
