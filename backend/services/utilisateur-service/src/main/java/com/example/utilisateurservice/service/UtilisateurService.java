@@ -31,8 +31,7 @@ public class UtilisateurService {
         if ((request.getRole() == Utilisateur.Role.MEDECIN || request.getRole() == Utilisateur.Role.SECRETAIRE)
                 && request.getIdCabinet() == null) {
             throw new IllegalArgumentException(
-                    "Le champ idCabinet est obligatoire pour les rôles MEDECIN et SECRETAIRE"
-            );
+                    "Le champ idCabinet est obligatoire pour les rôles MEDECIN et SECRETAIRE");
         }
 
         // ✅ VALIDATION 2 : SUPER_ADMIN et ADMIN ne doivent PAS avoir de cabinet
@@ -54,8 +53,7 @@ public class UtilisateurService {
                 request.getPrenom(),
                 request.getNom(),
                 request.getLogin() + "@cabinet.ma",
-                request.getRole()
-        );
+                request.getRole());
 
         // Créer l'utilisateur dans la base de données
         Utilisateur utilisateur = Utilisateur.builder()
@@ -78,6 +76,57 @@ public class UtilisateurService {
                 utilisateur.getIdCabinet() == null ? "TOUS LES CABINETS" : utilisateur.getIdCabinet());
 
         return mapToResponse(utilisateur);
+    }
+
+    @Transactional
+    public UtilisateurResponse registerMedecin(UtilisateurRequest request) {
+        log.info("Inscription publique d'un nouveau médecin: {}", request.getLogin());
+
+        // Forcer le rôle MEDECIN
+        request.setRole(Utilisateur.Role.MEDECIN);
+
+        // Validation spécifique
+        if (utilisateurRepository.existsByLogin(request.getLogin())) {
+            throw new RuntimeException("Un utilisateur avec ce login existe déjà");
+        }
+
+        // Créer l'utilisateur dans Keycloak
+        String keycloakId = keycloakService.createUser(
+                request.getLogin(),
+                request.getPassword(),
+                request.getPrenom(),
+                request.getNom(),
+                request.getLogin() + "@cabinet.ma",
+                request.getRole());
+
+        // Créer l'utilisateur dans la base de données
+        Utilisateur utilisateur = Utilisateur.builder()
+                .keycloakId(keycloakId)
+                .login(request.getLogin())
+                .nom(request.getNom())
+                .prenom(request.getPrenom())
+                .numTel(request.getNumTel())
+                .signature(request.getSignature())
+                .role(request.getRole())
+                .actif(true)
+                .build();
+
+        utilisateur = utilisateurRepository.save(utilisateur);
+
+        log.info("✅ Médecin inscrit avec succès: {}", utilisateur.getIdUtilisateur());
+        return mapToResponse(utilisateur);
+    }
+
+    @Transactional
+    public void updateCabinetId(Long idUtilisateur, Long idCabinet) {
+        log.info("Mise à jour du cabinet ID: {} pour l'utilisateur ID: {}", idCabinet, idUtilisateur);
+
+        Utilisateur utilisateur = utilisateurRepository.findById(idUtilisateur)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID: " + idUtilisateur));
+
+        // Update DB
+        utilisateur.setIdCabinet(idCabinet);
+        utilisateurRepository.save(utilisateur);
     }
 
     public UtilisateurResponse getUtilisateurById(Long id) {
@@ -177,14 +226,14 @@ public class UtilisateurService {
                 utilisateur.getKeycloakId(),
                 utilisateur.getPrenom(),
                 utilisateur.getNom(),
-                utilisateur.getLogin() + "@cabinet.ma"
-        );
+                utilisateur.getLogin() + "@cabinet.ma");
 
         utilisateur = utilisateurRepository.save(utilisateur);
 
         log.info("✅ Utilisateur mis à jour avec succès: {}", utilisateur.getIdUtilisateur());
         return mapToResponse(utilisateur);
     }
+
     /**
      *
      * L'authentification JWT garantit déjà que c'est le bon utilisateur
@@ -196,8 +245,10 @@ public class UtilisateurService {
         Utilisateur utilisateur = utilisateurRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        // L'utilisateur est déjà authentifié via JWT, pas besoin de vérifier l'ancien mot de passe
-        // La sécurité est assurée par @PreAuthorize("@utilisateurService.isCurrentUser(#id)")
+        // L'utilisateur est déjà authentifié via JWT, pas besoin de vérifier l'ancien
+        // mot de passe
+        // La sécurité est assurée par
+        // @PreAuthorize("@utilisateurService.isCurrentUser(#id)")
 
         keycloakService.updatePassword(utilisateur.getKeycloakId(), request.getNewPassword());
 

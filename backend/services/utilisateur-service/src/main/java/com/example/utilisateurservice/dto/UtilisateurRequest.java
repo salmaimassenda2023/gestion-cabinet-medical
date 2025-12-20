@@ -28,7 +28,7 @@ public class UtilisateurRequest {
 
     private String signature;
 
-    @NotNull(message = "Le rôle est obligatoire")
+
     private Utilisateur.Role role;
 
     private Long idCabinet;

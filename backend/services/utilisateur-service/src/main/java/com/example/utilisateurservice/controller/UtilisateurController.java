@@ -41,6 +41,15 @@ public class UtilisateurController {
     }
 
     // ============================================================
+    // ENDPOINT D'INSCRIPTION PUBLIC (MEDECIN)
+    // ============================================================
+    @PostMapping("/register/medecin")
+    public ResponseEntity<UtilisateurResponse> registerMedecin(@Valid @RequestBody UtilisateurRequest request) {
+        log.info("Inscription médecin public: {}", request.getLogin());
+        return ResponseEntity.status(HttpStatus.CREATED).body(utilisateurService.registerMedecin(request));
+    }
+
+    // ============================================================
     // CRUD UTILISATEURS
     // ============================================================
 
@@ -49,7 +58,7 @@ public class UtilisateurController {
      * Accessible par: SUPER_ADMIN et ADMIN
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MEDECIN')")
     public ResponseEntity<UtilisateurResponse> createUtilisateur(@Valid @RequestBody UtilisateurRequest request) {
         log.info("Création utilisateur: {}", request.getLogin());
         return ResponseEntity.status(HttpStatus.CREATED).body(utilisateurService.createUtilisateur(request));
@@ -120,6 +129,7 @@ public class UtilisateurController {
         utilisateurService.deleteUtilisateur(id);
         return ResponseEntity.noContent().build();
     }
+
     /**
      * Mettre à jour un utilisateur
      * Accessible par: SUPER_ADMIN, ADMIN, ou l'utilisateur lui-même
@@ -131,6 +141,18 @@ public class UtilisateurController {
             @Valid @RequestBody UtilisateurUpdateRequest request) {
         log.info("Mise à jour utilisateur ID: {}", id);
         return ResponseEntity.ok(utilisateurService.updateUtilisateur(id, request));
+    }
+
+    // ============================================================
+    // ENDPOINT INTERNE / SYNCHRONISATION (CABINET)
+    // ============================================================
+    @PutMapping("/{id}/cabinet")
+    public ResponseEntity<Void> updateCabinetId(
+            @PathVariable Long id,
+            @RequestParam Long idCabinet) {
+        log.info("Sync Cabinet ID: {} -> User ID: {}", idCabinet, id);
+        utilisateurService.updateCabinetId(id, idCabinet);
+        return ResponseEntity.ok().build();
     }
 
     /**

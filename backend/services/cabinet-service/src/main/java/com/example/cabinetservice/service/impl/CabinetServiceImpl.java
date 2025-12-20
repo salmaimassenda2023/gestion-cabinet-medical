@@ -1,0 +1,227 @@
+package com.example.cabinetservice.service.impl;
+
+import com.example.cabinetservice.dto.*;
+import com.example.cabinetservice.entity.AbonnementCabinet;
+import com.example.cabinetservice.entity.Cabinet;
+import com.example.cabinetservice.entity.PaiementAbonnement;
+import com.example.cabinetservice.entity.ServiceConsultation;
+import com.example.cabinetservice.enums.AbonnementStatus;
+import com.example.cabinetservice.enums.PaiementStatus;
+import com.example.cabinetservice.exception.ResourceNotFoundException;
+import com.example.cabinetservice.mapper.CabinetMapper;
+import com.example.cabinetservice.repository.AbonnementRepository;
+import com.example.cabinetservice.repository.CabinetRepository;
+import com.example.cabinetservice.repository.PaiementRepository;
+import com.example.cabinetservice.repository.ServiceConsultationRepository;
+import com.example.cabinetservice.service.CabinetService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CabinetServiceImpl implements CabinetService {
+
+    private final CabinetRepository cabinetRepository;
+    private final AbonnementRepository abonnementRepository;
+    private final ServiceConsultationRepository serviceConsultationRepository;
+    private final PaiementRepository paiementRepository;
+    private final CabinetMapper cabinetMapper;
+    private final com.example.cabinetservice.utilisateur.MedecinClient medecinClient;
+
+    @Override
+    @Transactional
+    public CabinetResponseDTO createCabinet(CabinetCreateDTO dto) {
+        log.info("Creating new cabinet: {}", dto.getNom());
+
+        // 0. Verify Medecin Exists in User Service
+        if (dto.getMedecinId() != null) {
+            try {
+                medecinClient.getUtilisateurById(dto.getMedecinId());
+            } catch (Exception e) {
+                log.error("Error verifying medecin id: {}", dto.getMedecinId(), e);
+            }
+        }
+
+        // 1. Create Cabinet (INACTIF par défaut)
+        Cabinet cabinet = cabinetMapper.toEntity(dto);
+        cabinet.setActif(false);  // ← FORCER À FALSE
+        cabinet = cabinetRepository.save(cabinet);
+
+        // 2. Create and Link Abonnement (SUSPENDU par défaut)
+        if (dto.getAbonnement() != null) {
+            AbonnementCabinet abonnement = cabinetMapper.toEntity(dto.getAbonnement());
+            abonnement.setCabinet(cabinet);
+            abonnement.setStatut(AbonnementStatus.SUSPENDU);  // ← SUSPENDU au lieu de ACTIF
+            abonnement.setDateDebut(LocalDateTime.now());
+
+            if ("ANNUEL".equalsIgnoreCase(abonnement.getTypePeriode().name())) {
+                abonnement.setDateFin(LocalDateTime.now().plusYears(1));
+            } else {
+                abonnement.setDateFin(LocalDateTime.now().plusMonths(1));
+            }
+
+            abonnementRepository.save(abonnement);
+            cabinet.setAbonnement(abonnement);
+        }
+
+        // 3. Create Default Service
+        if (dto.getServiceConsultationGenerale() != null) {
+            ServiceConsultation service = cabinetMapper.toEntity(dto.getServiceConsultationGenerale());
+            service.setCabinet(cabinet);
+            service.setObligatoire(true);
+            serviceConsultationRepository.save(service);
+        }
+
+        // 4. Sync User Service (Link Cabinet to Medecin)
+        if (dto.getMedecinId() != null) {
+            try {
+                medecinClient.updateCabinetId(dto.getMedecinId(), cabinet.getId());
+                log.info("Synced cabinet id {} to medecin {}", cabinet.getId(), dto.getMedecinId());
+            } catch (Exception e) {
+                log.error("Failed to sync cabinet id to medecin service", e);
+            }
+        }
+
+        // 5. RETOURNER LA RÉPONSE COMPLÈTE AVEC LES SERVICES
+        CabinetResponseDTO response = cabinetMapper.toDto(cabinet);
+
+        // Charger les services
+        List<ServiceConsultationDTO> services = serviceConsultationRepository.findByCabinetId(cabinet.getId())
+                .stream()
+                .map(cabinetMapper::toDto)
+                .collect(Collectors.toList());
+        response.setServices(services);
+
+        return response;
+    }
+
+    @Override
+    public CabinetResponseDTO getCabinet(Long id) {
+        Cabinet cabinet = cabinetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cabinet not found with id: " + id));
+
+        CabinetResponseDTO response = cabinetMapper.toDto(cabinet);
+
+        // Populate services
+        List<ServiceConsultationDTO> services = serviceConsultationRepository.findByCabinetId(id).stream()
+                .map(cabinetMapper::toDto)
+                .collect(Collectors.toList());
+        response.setServices(services);
+
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public CabinetResponseDTO updateCabinet(Long id, CabinetUpdateDTO dto) {
+        Cabinet cabinet = cabinetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cabinet not found with id: " + id));
+
+        if (dto.getNom() != null)
+            cabinet.setNom(dto.getNom());
+        if (dto.getSpecialite() != null)
+            cabinet.setSpecialite(dto.getSpecialite());
+        if (dto.getAdresse() != null)
+            cabinet.setAdresse(dto.getAdresse());
+        if (dto.getTel() != null)
+            cabinet.setTel(dto.getTel());
+        if (dto.getLogo() != null)
+            cabinet.setLogo(dto.getLogo());
+
+        Cabinet updatedCabinet = cabinetRepository.save(cabinet);
+        return cabinetMapper.toDto(updatedCabinet);
+    }
+
+    @Override
+    public void deleteCabinet(Long id) {
+        if (!cabinetRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Cabinet not found with id: " + id);
+        }
+        cabinetRepository.deleteById(id);
+    }
+
+    @Override
+    public Boolean isCabinetActive(Long id) {
+        Cabinet cabinet = cabinetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cabinet not found with id: " + id));
+        return cabinet.getActif();
+    }
+
+    @Override
+    @Transactional
+    public ServiceConsultationDTO addService(Long cabinetId, ServiceConsultationDTO dto) {
+        Cabinet cabinet = cabinetRepository.findById(cabinetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cabinet not found with id: " + cabinetId));
+
+        ServiceConsultation service = cabinetMapper.toEntity(dto);
+        service.setCabinet(cabinet);
+
+        ServiceConsultation savedService = serviceConsultationRepository.save(service);
+        return cabinetMapper.toDto(savedService);
+    }
+
+    @Override
+    public List<ServiceConsultationDTO> getServices(Long cabinetId) {
+        if (!cabinetRepository.existsById(cabinetId)) {
+            throw new ResourceNotFoundException("Cabinet not found with id: " + cabinetId);
+        }
+        return serviceConsultationRepository.findByCabinetId(cabinetId).stream()
+                .map(cabinetMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void handleSuccessfulPayment(Long abonnementId, Double amount, String stripePaymentId) {
+        log.info("Processing successful payment for abonnement: {}", abonnementId);
+
+        AbonnementCabinet abonnement = abonnementRepository.findById(abonnementId)
+                .orElseThrow(() -> new ResourceNotFoundException("Abonnement not found with id: " + abonnementId));
+
+        // Create Payment Record
+        PaiementAbonnement paiement = PaiementAbonnement.builder()
+                .abonnement(abonnement)
+                .montant(amount)
+                .statut(PaiementStatus.VALIDE)
+                .datePaiement(LocalDateTime.now())
+                .build();
+        paiementRepository.save(paiement);
+
+        // Activate Abonnement
+        abonnement.setStatut(AbonnementStatus.ACTIF);
+
+        // Update Dates if not already set or expired
+        LocalDateTime now = LocalDateTime.now();
+        if (abonnement.getDateDebut() == null || abonnement.getDateFin() == null
+                || abonnement.getDateFin().isBefore(now)) {
+            abonnement.setDateDebut(now);
+            if ("ANNUEL".equalsIgnoreCase(abonnement.getTypePeriode().name())) {
+                abonnement.setDateFin(now.plusYears(1));
+            } else {
+                abonnement.setDateFin(now.plusMonths(1));
+            }
+        } else {
+            // Extension case
+            if ("ANNUEL".equalsIgnoreCase(abonnement.getTypePeriode().name())) {
+                abonnement.setDateFin(abonnement.getDateFin().plusYears(1));
+            } else {
+                abonnement.setDateFin(abonnement.getDateFin().plusMonths(1));
+            }
+        }
+
+        abonnementRepository.save(abonnement);
+
+        // Reactivate Cabinet
+        if (abonnement.getCabinet() != null) {
+            abonnement.getCabinet().setActif(true);
+            cabinetRepository.save(abonnement.getCabinet());
+        }
+    }
+}
