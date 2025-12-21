@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<body>
+  <div class="container">
+    <app-header (logout)="logout()" (searchChange)="onSearch($event)"></app-header>
+    <app-sidebar></app-sidebar>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <app-user-table [users]="filteredUsers" [currentPage]="currentPage" [totalPages]="totalPages"
+        [activeTab]="activeTab" [activeFilter]="activeFilter" (add)="addUser()" (edit)="editUser($event)"
+        (delete)="deleteUser($event)" (tabChange)="onTabChange($event)" (filterChange)="onFilterChange($event)"
+        (pageChange)="goToPage($event)">
+      </app-user-table>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <app-modal [isOpen]="isAddModalOpen" title="Add New User" [showFooter]="false" (close)="isAddModalOpen = false">
+    <app-user-form [isDoctor]="activeTab === 'doctors'" (save)="onSaveNewUser($event)"
+      (cancel)="isAddModalOpen = false"></app-user-form>
+  </app-modal>
+
+  <!-- Edit User Modal -->
+  <app-modal [isOpen]="isEditModalOpen" title="Edit User" [showFooter]="false" (close)="isEditModalOpen = false">
+    <app-user-form [isDoctor]="activeTab === 'doctors'" [user]="selectedUser" (save)="onUpdateUser($event)"
+      (cancel)="isEditModalOpen = false"></app-user-form>
+  </app-modal>
+
+  <!-- Delete Confirmation Modal -->
+  <app-modal [isOpen]="isDeleteModalOpen" title="Delete User" confirmText="Delete" [isDestructive]="true"
+    (close)="isDeleteModalOpen = false" (confirm)="confirmDelete()">
+    <p>Are you sure you want to delete <strong>{{ selectedUser?.name }}</strong>? This action cannot be undone.</p>
+  </app-modal>
+
+  <!-- Logout Confirmation Modal -->
+  <app-modal [isOpen]="isLogoutModalOpen" title="Logout" confirmText="Logout" [isDestructive]="true"
+    (close)="isLogoutModalOpen = false" (confirm)="confirmLogout()">
+    <p>Are you sure you want to log out?</p>
+  </app-modal>
+</body>
+
+</html>

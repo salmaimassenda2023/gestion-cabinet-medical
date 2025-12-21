@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<body>
+    <div class="container">
+        <app-header (logout)="logout()" (searchChange)="onSearch($event)"></app-header>
+        <app-sidebar></app-sidebar>
+
+        <div class="main-content">
+            <app-clinic-table [clinics]="filteredClinics" [activeFilter]="activeFilter" [currentPage]="1"
+                [totalPages]="1" (add)="addClinic()" (edit)="editClinic($event)" (delete)="deleteClinic($event)"
+                (filterChange)="onFilterChange($event)">
+            </app-clinic-table>
+        </div>
+    </div>
+
+    <!-- Add Clinic Modal -->
+    <app-modal [isOpen]="isAddModalOpen" title="Add New Clinic" [showFooter]="false" (close)="isAddModalOpen = false">
+        <app-clinic-form [doctors]="doctors" (save)="onSaveNewClinic($event)" (cancel)="isAddModalOpen = false">
+        </app-clinic-form>
+    </app-modal>
+
+    <!-- Edit Clinic Modal -->
+    <app-modal [isOpen]="isEditModalOpen" title="Edit Clinic" [showFooter]="false" (close)="isEditModalOpen = false">
+        <app-clinic-form [clinic]="selectedClinic" [doctors]="doctors" (save)="onUpdateClinic($event)"
+            (cancel)="isEditModalOpen = false">
+        </app-clinic-form>
+    </app-modal>
+
+    <!-- Delete Confirmation Modal -->
+    <app-modal [isOpen]="isDeleteModalOpen" title="Delete Clinic" confirmText="Delete" [isDestructive]="true"
+        (close)="isDeleteModalOpen = false" (confirm)="confirmDelete()">
+        <p>Are you sure you want to delete clinic <strong>{{ selectedClinic?.name }}</strong>? This action cannot be
+            undone.
+        </p>
+    </app-modal>
+
+    <!-- Logout Confirmation Modal -->
+    <app-modal [isOpen]="isLogoutModalOpen" title="Confirm Logout" confirmText="Logout" [isDestructive]="true"
+        (close)="isLogoutModalOpen = false" (confirm)="confirmLogout()">
+        <p>Are you sure you want to logout? You will need to login again to access your account.</p>
+    </app-modal>
+</body>
+
+</html>

@@ -1,0 +1,196 @@
+/* Action Bar */
+.action-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.title-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(142, 195, 212, 0.1);
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: #3b9aa9;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.title-tab svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Card */
+.card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Card Header */
+.card-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 25px 30px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-wrapper {
+    position: relative;
+}
+
+.filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-btn svg:first-child {
+    width: 16px;
+    height: 16px;
+    color: #3b9aa9;
+}
+
+.filter-btn:hover {
+    color: #3b9aa9;
+}
+
+.filter-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    z-index: 100;
+    min-width: 150px;
+}
+
+.filter-menu button {
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.filter-menu button:hover {
+    background: #f5f7fa;
+    color: #3b9aa9;
+}
+
+/* Table Container */
+.table-container {
+    padding: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8c9ba1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-top: 1px solid #f5f5f5;
+}
+
+td {
+    padding: 20px;
+    font-size: 14px;
+    color: #333;
+    border-top: 1px solid #f5f5f5;
+}
+
+.clinic-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.clinic-logo-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #f8f9fa;
+    border: 1px solid #eee;
+}
+
+.clinic-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #d1ecf5;
+    color: #3b9aa9;
+}
+
+.status-expired {
+    background: #f8d7da;
+    color: #dc3545;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding: 20px 30px;
+    border-top: 1px solid #f5f5f5;
+}
+
+.page-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+.page-btn:hover {
+    color: #3b9aa9;
+}
+
+.page-info {
+    font-size: 13px;
+    color: #666;
+}

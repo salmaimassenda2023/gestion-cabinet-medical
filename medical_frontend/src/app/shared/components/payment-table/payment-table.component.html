@@ -1,0 +1,92 @@
+<!-- Action Bar -->
+<div class="action-bar">
+    <div class="title-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+        </svg>
+        Payments
+    </div>
+</div>
+
+<!-- Card -->
+<div class="card">
+    <!-- Card Header -->
+    <div class="card-header">
+        <div class="filter-wrapper">
+            <button class="filter-btn" (click)="toggleFilterMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                {{ getFilterLabel() }}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="width: 12px; height: 12px;">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+            <div class="filter-menu" *ngIf="showFilterMenu">
+                <button (click)="setFilter('all')">All Status</button>
+                <button (click)="setFilter('active')">Active</button>
+                <button (click)="setFilter('expired')">Expired</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>CLINIC</th>
+                    <th>CREATION DATE</th>
+                    <th>PAYMENT DELAY</th>
+                    <th>PRICING TYPE</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let payment of payments">
+                    <td>{{ payment.id }}</td>
+                    <td>
+                        <div class="clinic-info">
+                            <img *ngIf="payment.clinicLogo" [src]="payment.clinicLogo" alt="Logo"
+                                class="clinic-logo-img">
+                            <span class="clinic-name">{{ payment.clinicName }}</span>
+                        </div>
+                    </td>
+                    <td>{{ payment.creationDate }}</td>
+                    <td>{{ payment.paymentDelay }}</td>
+                    <td>{{ getPricingTypeText(payment.pricingType) }}</td>
+                    <td>
+                        <span class="status-badge" [ngClass]="getStatusClass(payment.status)">
+                            {{ getStatusText(payment.status) }}
+                        </span>
+                    </td>
+                </tr>
+                <tr *ngIf="payments.length === 0">
+                    <td colspan="5" style="text-align: center; color: #999; padding: 40px;">
+                        No payment records found.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="payments.length > 0">
+        <button class="page-btn" (click)="previousPage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width: 14px; height: 14px;">
+                <polyline points="15 18 9 12 15 6" />
+            </svg>
+        </button>
+        <span class="page-info">{{ currentPage }} .. {{ totalPages }}</span>
+        <button class="page-btn" (click)="nextPage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                style="width: 14px; height: 14px;">
+                <polyline points="9 18 15 12 9 6" />
+            </svg>
+        </button>
+    </div>
+</div>
