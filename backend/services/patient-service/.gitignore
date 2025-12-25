@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Uploads - Documents Médicaux ###
+gestion-cabinet-medical/backend/uploads/documents/
+**/uploads/documents/**
+uploads/documents/
