@@ -5,6 +5,17 @@
   height: 100%;
 }
 
+.error-message {
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
 .login-container {
   width: 100vw;
   height: 100vh;

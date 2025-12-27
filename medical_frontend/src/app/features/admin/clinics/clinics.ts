@@ -6,6 +6,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { ClinicTableComponent, Clinic } from '../../../shared/components/clinic-table/clinic-table.component';
 import { ClinicFormComponent } from '../../../shared/components/clinic-form/clinic-form.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { CabinetService, CabinetResponse } from '../../doctor/services/cabinet.service';
 
 @Component({
     selector: 'app-clinics',
@@ -23,41 +24,11 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
     styleUrls: ['./clinics.css']
 })
 export class ClinicsComponent implements OnInit {
-    clinics: Clinic[] = [
-        {
-            id: 'CL-001',
-            logo: 'assets/clinic-1.png',
-            name: 'St. Mary Medical Center',
-            address: '123 Health Ave, NY',
-            phone: '+1 234 567 890',
-            specialty: 'Cardiology',
-            doctor: 'Dr. John Doe',
-            status: 'active'
-        },
-        {
-            id: 'CL-002',
-            logo: 'assets/clinic-2.png',
-            name: 'Oakcrest Family Clinic',
-            address: '456 Wellness Rd, CA',
-            phone: '+1 987 654 321',
-            specialty: 'Pediatrics',
-            doctor: 'Dr. Sarah Connor',
-            status: 'active'
-        },
-        {
-            id: 'CL-003',
-            logo: 'assets/clinic-3.png',
-            name: 'Peak Vision Center',
-            address: '789 Sight Blvd, TX',
-            phone: '+1 555 012 345',
-            specialty: 'Ophthalmology',
-            doctor: 'Dr. Michael Smith',
-            status: 'deactivate'
-        }
-    ];
+    clinics: Clinic[] = [];
+    allClinics: Clinic[] = [];
 
     doctors = [
-        { id: '1', name: 'Dr. John Doe' },
+        { id: '1', name: 'Dr. John Doe' }, // Ideally fetch doctors from API too
         { id: '2', name: 'Dr. Sarah Connor' },
         { id: '3', name: 'Dr. Michael Smith' },
         { id: '4', name: 'Dr. Emma Watson' }
@@ -71,7 +42,27 @@ export class ClinicsComponent implements OnInit {
     isDeleteModalOpen = false;
     selectedClinic?: Clinic;
 
-    ngOnInit(): void { }
+    constructor(private cabinetService: CabinetService) { }
+
+    ngOnInit(): void {
+        this.loadClinics();
+    }
+
+    loadClinics() {
+        this.cabinetService.getAllCabinets().subscribe(cabinets => {
+            this.allClinics = cabinets.map(c => ({
+                id: c.idCabinet.toString(),
+                logo: c.logo || 'assets/clinic-1.png', // Placeholder if null
+                name: c.nom,
+                address: c.adresse,
+                phone: c.numTel,
+                specialty: c.specialite || 'General', // Specialty field mismatch in CabinetResponse vs Clinic
+                doctor: 'Dr. Assigned', // CabinetResponse might not have doctor name directly
+                status: 'active' // CabinetResponse missing status, assuming active
+            }));
+            this.clinics = [...this.allClinics];
+        });
+    }
 
     get filteredClinics(): Clinic[] {
         let filtered = this.clinics;

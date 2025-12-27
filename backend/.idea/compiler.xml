@@ -7,11 +7,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="discovry-server" />
         <module name="config-server" />
+        <module name="consultation-service" />
+        <module name="discovry-server" />
+        <module name="medicament-service" />
         <module name="gateway" />
       </profile>
-      <profile name="Annotation profile for cabinet-service" enabled="true">
+      <profile name="Annotation profile for utilisateur-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -22,20 +24,15 @@
         <module name="utilisateur-service" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="cabinet-service" target="19" />
-      <module name="config-server" target="19" />
-      <module name="discovry-server" target="19" />
-      <module name="gateway" target="19" />
-      <module name="utilisateur-service" target="19" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="cabinet-service" options="-parameters" />
       <module name="config-server" options="-parameters" />
+      <module name="consultation-service" options="-parameters" />
       <module name="discovry-server" options="-parameters" />
       <module name="gateway" options="-parameters" />
+      <module name="medicament-service" options="-parameters" />
       <module name="utilisateur-service" options="-parameters" />
     </option>
   </component>

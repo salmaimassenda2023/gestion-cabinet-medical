@@ -43,8 +43,7 @@
       </ul>
 
       <div class="card-footer">
-        <button class="cta-button" [ngClass]="plan.popular ? 'btn-white' : 'btn-primary-gradient'"
-          (click)="navigateToOnboarding()">
+        <button class="pricing-cta" (click)="navigateToOnboarding(plan.name.toLowerCase())">
           {{ plan.cta }}
         </button>
       </div>

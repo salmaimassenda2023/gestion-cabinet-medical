@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
@@ -8,6 +9,8 @@
         <option value="$PROJECT_DIR$/services/gateway/pom.xml" />
         <option value="$PROJECT_DIR$/services/utilisateur-service/pom.xml" />
         <option value="$PROJECT_DIR$/services/cabinet-service/pom.xml" />
+        <option value="$PROJECT_DIR$/services/medicament-service/pom.xml" />
+        <option value="$PROJECT_DIR$/services/consultation-service/pom.xml" />
       </list>
     </option>
   </component>

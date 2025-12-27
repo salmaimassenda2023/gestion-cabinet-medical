@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { IncomeChartComponent } from './income-chart.component';
+import { AdminService } from '../../../core/services/admin.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -49,9 +50,19 @@ export class AdminDashboardComponent implements OnInit {
 
   selectedMonth = 'october';
 
-  constructor() { }
+  constructor(private adminService: AdminService) { }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    this.adminService.getDashboardStats().subscribe(stats => {
+      this.stats[0].value = stats.clinics.toString();
+      this.stats[1].value = `${stats.revenue} DH`;
+      this.stats[2].value = stats.medicaments.toString();
+    });
+
+    this.adminService.getIncomeData().subscribe(data => {
+      this.incomeData = data;
+    });
+  }
 
   onNavIconClick(icon: string): void {
     this.activeNavIcon = icon;

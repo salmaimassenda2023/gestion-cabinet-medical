@@ -14,6 +14,6 @@ export class HeroSectionComponent {
   constructor(private router: Router) { }
 
   navigateToOnboarding() {
-    this.router.navigate(['/onboarding']);
+    this.router.navigate(['/doctor-onboarding']);
   }
 }

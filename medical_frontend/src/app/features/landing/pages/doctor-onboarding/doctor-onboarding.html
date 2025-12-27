@@ -106,6 +106,10 @@
                 <div class="input-group">
                     <label>Clinic Name</label>
                     <input type="text" formControlName="name" placeholder="City Health Clinic">
+                    <div *ngIf="clinicForm.get('name')?.invalid && clinicForm.get('name')?.touched"
+                        class="error-message">
+                        Clinic Name is required.
+                    </div>
                 </div>
 
                 <div class="input-group logo-upload">
@@ -119,27 +123,52 @@
                 <div class="input-group">
                     <label>Specialty</label>
                     <input type="text" formControlName="specialty" placeholder="Cardiology">
+                    <div *ngIf="clinicForm.get('specialty')?.invalid && clinicForm.get('specialty')?.touched"
+                        class="error-message">
+                        Specialty is required.
+                    </div>
                 </div>
 
                 <div class="input-group">
                     <label>Address</label>
                     <textarea formControlName="address" rows="2" placeholder="123 Medical Blvd, Suite 100"></textarea>
+                    <div *ngIf="clinicForm.get('address')?.invalid && clinicForm.get('address')?.touched"
+                        class="error-message">
+                        Address is required.
+                    </div>
                 </div>
 
                 <div class="row">
                     <div class="input-group">
                         <label>Clinic Phone</label>
                         <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000">
+                        <div *ngIf="clinicForm.get('tel')?.invalid && clinicForm.get('tel')?.touched"
+                            class="error-message">
+                            Clinic Phone is required.
+                        </div>
                     </div>
                     <div class="input-group">
                         <label>Max Patients/Day</label>
                         <input type="number" formControlName="maxPatients" placeholder="20">
+                        <div *ngIf="clinicForm.get('maxPatients')?.invalid && clinicForm.get('maxPatients')?.touched"
+                            class="error-message">
+                            <span *ngIf="clinicForm.get('maxPatients')?.errors?.['required']">Max Patients/Day is
+                                required.</span>
+                            <span *ngIf="clinicForm.get('maxPatients')?.errors?.['min']">Must be at least 1.</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <label>Consultation Duration (mins)</label>
                     <input type="number" formControlName="consultationTime" placeholder="30">
+                    <div *ngIf="clinicForm.get('consultationTime')?.invalid && clinicForm.get('consultationTime')?.touched"
+                        class="error-message">
+                        <span *ngIf="clinicForm.get('consultationTime')?.errors?.['required']">Consultation Duration is
+                            required.</span>
+                        <span *ngIf="clinicForm.get('consultationTime')?.errors?.['min']">Must be at least 5
+                            minutes.</span>
+                    </div>
                 </div>
             </form>
 
@@ -175,27 +204,17 @@
             <!-- Step 4: Payment -->
             <form [formGroup]="paymentForm" *ngIf="currentStep === 4" class="form-grid">
                 <h3 class="step-title">Payment Method</h3>
-                <p class="subtitle">Enter your card details for the subscription.</p>
+                <p class="subtitle">Enter your card details for the {{ selectedPlan }} subscription.</p>
 
                 <div class="input-group">
                     <label>Name on Card</label>
                     <input type="text" formControlName="cardName" placeholder="JOHN DOE">
                 </div>
 
-                <div class="input-group">
-                    <label>Card Number</label>
-                    <input type="text" formControlName="cardNumber" maxlength="16" placeholder="0000 0000 0000 0000">
-                </div>
-
-                <div class="row">
-                    <div class="input-group">
-                        <label>Expiry Date</label>
-                        <input type="text" formControlName="expiry" placeholder="MM/YY">
-                    </div>
-                    <div class="input-group">
-                        <label>CVC</label>
-                        <input type="text" formControlName="cvc" maxlength="4" placeholder="123">
-                    </div>
+                <div class="input-group"
+                    style="padding: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <ngx-stripe-card [options]="cardOptions" [containerClass]="'stripe-card-container'">
+                    </ngx-stripe-card>
                 </div>
             </form>
 

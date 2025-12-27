@@ -12,8 +12,8 @@ import { Router } from '@angular/router';
 export class PricingSectionComponent {
   constructor(private router: Router) { }
 
-  navigateToOnboarding() {
-    this.router.navigate(['/onboarding']);
+  navigateToOnboarding(plan: string) {
+    this.router.navigate(['/doctor-onboarding'], { queryParams: { plan } }); // Updated path to match likely route
   }
 
   plans = [
