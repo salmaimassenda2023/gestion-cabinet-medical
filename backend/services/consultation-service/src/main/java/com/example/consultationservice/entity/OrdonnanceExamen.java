@@ -19,7 +19,6 @@ public class OrdonnanceExamen {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idOrdonnance;
     private Date dateCreation;
-    private Boolean signee;
 
     @ManyToOne
     @JoinColumn(name = "idConsultation")

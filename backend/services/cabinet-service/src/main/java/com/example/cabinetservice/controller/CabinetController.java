@@ -55,4 +55,12 @@ public class CabinetController {
     public ResponseEntity<List<ServiceConsultationDTO>> getServices(@PathVariable Long id) {
         return ResponseEntity.ok(cabinetService.getServices(id));
     }
+
+    @GetMapping("/{cabinetId}/services/{serviceId}")
+    public ResponseEntity<ServiceConsultationDTO> getServiceById(
+            @PathVariable Long cabinetId,
+            @PathVariable Long serviceId) {
+        ServiceConsultationDTO service = cabinetService.getServiceById(cabinetId, serviceId);
+        return ResponseEntity.ok(service);
+    }
 }

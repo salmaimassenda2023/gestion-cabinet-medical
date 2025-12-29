@@ -24,5 +24,7 @@ public interface CabinetService {
 
     List<ServiceConsultationDTO> getServices(Long cabinetId);
 
+    ServiceConsultationDTO getServiceById(Long cabinetId,Long serviceId);
+
     void handleSuccessfulPayment(Long abonnementId, Double amount, String stripePaymentId);
 }

@@ -19,10 +19,14 @@ public class Consultation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idConsultation;
     private Long idPatient; // Référence externe
-    private Long idMedecin; // Référence externe
-    private Long idRendezVous; // Référence externe
+    private Long idCabinet; // Référence externe
     private Date dateConsultation;
     private String diagnostic;
+    private Double montantTotal;  // Add this field
+
+    // Add consultation services
+    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL)
+    private List<ConsultationServiceItem> consultationServices;
 
     @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL)
     private List<ExamenClinique> examensCliniques;
@@ -35,4 +39,5 @@ public class Consultation {
 
     @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL)
     private List<Facture> factures;
+
 }

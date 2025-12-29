@@ -1,5 +1,6 @@
 package com.example.consultationservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +15,9 @@ import java.util.List;
 @AllArgsConstructor
 public class OrdonnanceMedicamentDTO {
     private Long idOrdonnance;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Africa/Casablanca")
     private Date dateCreation;
-    private Boolean signee;
+
     private List<LigneOrdonnanceMedicamentDTO> lignes;
 }

@@ -166,7 +166,29 @@ public class CabinetServiceImpl implements CabinetService {
         ServiceConsultation savedService = serviceConsultationRepository.save(service);
         return cabinetMapper.toDto(savedService);
     }
+    @Override
+    public ServiceConsultationDTO getServiceById(Long cabinetId, Long serviceId) {
+        log.info("Recherche du service avec ID: {} pour le cabinet ID: {}", serviceId, cabinetId);
 
+        // First verify cabinet exists
+        Cabinet cabinet = cabinetRepository.findById(cabinetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cabinet non trouvé avec l'ID: " + cabinetId));
+
+        // Then find the service
+        ServiceConsultation service = serviceConsultationRepository.findById(serviceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service non trouvé avec l'ID: " + serviceId));
+
+        // Verify the service belongs to this cabinet
+        if (!service.getCabinet().getId().equals(cabinetId)) {
+            throw new ResourceNotFoundException(
+                    "Service " + serviceId + " n'appartient pas au cabinet " + cabinetId);
+        }
+
+        log.info("Service trouvé: {} (Cabinet ID: {})",
+                service.getNomService(), cabinetId);
+
+        return cabinetMapper.toDto(service);
+    }
     @Override
     public List<ServiceConsultationDTO> getServices(Long cabinetId) {
         if (!cabinetRepository.existsById(cabinetId)) {

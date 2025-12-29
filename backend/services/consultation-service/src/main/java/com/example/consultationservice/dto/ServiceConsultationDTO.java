@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -12,5 +13,8 @@ import lombok.NoArgsConstructor;
 public class ServiceConsultationDTO {
     private Long idService;
     private String nomService;
+    private String description;
     private Double prix;
+    private Boolean obligatoire;
+    private Long cabinetId;
 }

@@ -1,7 +1,7 @@
 package com.example.consultationservice.enums;
 
 public enum TypeExamenClinique {
-    TA,
+    TENSION,
     TEMPERATURE,
     POIDS,
     FREQUENCE_CARDIAQUE,

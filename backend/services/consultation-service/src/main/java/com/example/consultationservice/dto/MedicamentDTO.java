@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class MedicamentDTO {
     private String id;
     private String nom;
-    private String dosage;
+    private String dci;
     private String forme;
+    private String dosage;
 }
