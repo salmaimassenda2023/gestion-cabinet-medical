@@ -9,8 +9,10 @@
         <outputRelativeToContentRoot value="true" />
         <module name="config-server" />
         <module name="patient-service" />
+        <module name="rendezVous-service" />
         <module name="discovry-server" />
         <module name="gateway" />
+        <module name="notification-service" />
       </profile>
       <profile name="Annotation profile for cabinet-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -28,7 +30,9 @@
       <module name="config-server" target="19" />
       <module name="discovry-server" target="19" />
       <module name="gateway" target="19" />
+      <module name="notification-service" target="1.5" />
       <module name="patient-service" target="19" />
+      <module name="rendezVous-service" target="19" />
       <module name="utilisateur-service" target="19" />
     </bytecodeTargetLevel>
   </component>
@@ -39,6 +43,7 @@
       <module name="discovry-server" options="-parameters" />
       <module name="gateway" options="-parameters" />
       <module name="patient-service" options="-parameters" />
+      <module name="rendezVous-service" options="-parameters" />
       <module name="utilisateur-service" options="-parameters" />
     </option>
   </component>

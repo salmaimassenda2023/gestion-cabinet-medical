@@ -61,6 +61,36 @@ public class PatientServiceImpl implements PatientService {
         log.info("✅ Patient créé avec succès: ID={}", patient.getId());
         return patientMapper.toDto(patient);
     }
+    @Override
+    @Transactional(readOnly = true)
+    public PatientInfoDTO getPatientInfo(Long id) {
+        log.info("📋 Récupération des infos basiques du patient ID: {}", id);
+
+        Patient patient = patientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Patient introuvable avec l'ID: " + id
+                ));
+
+        PatientInfoDTO dto = PatientInfoDTO.builder()
+                .id(patient.getId())
+                .cin(patient.getCin())
+                .nom(patient.getNom())
+                .prenom(patient.getPrenom())
+                .dateNaissance(patient.getDateNaissance())
+                .sexe(patient.getSexe())
+                .telephone(patient.getTelephone())
+                .email(patient.getEmail())
+                .adresse(patient.getAdresse())
+                .typeMutuelle(patient.getTypeMutuelle())
+                .numeroMutuelle(patient.getNumeroMutuelle())
+                .idCabinet(patient.getIdCabinet())
+                .build();
+
+        log.info("✅ Infos basiques récupérées: {} {}",
+                patient.getPrenom(), patient.getNom());
+
+        return dto;
+    }
 
     @Override
     public PatientResponseDTO getPatient(Long id) {
