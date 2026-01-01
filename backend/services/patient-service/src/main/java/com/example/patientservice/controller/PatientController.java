@@ -28,6 +28,16 @@ public class PatientController {
         PatientResponseDTO response = patientService.createPatient(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+    /**
+     *  NOUVEAU ENDPOINT : Infos basiques sans dossier médical.
+     * Utilisé par les autres microservices pour optimiser les performances.
+     */
+    @GetMapping("/{id}/info")
+    public ResponseEntity<PatientInfoDTO> getPatientInfo(@PathVariable Long id) {
+        log.info("️ Récupération des infos basiques du patient ID: {}", id);
+        PatientInfoDTO response = patientService.getPatientInfo(id);
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<PatientResponseDTO> getPatient(@PathVariable Long id) {

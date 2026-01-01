@@ -10,6 +10,7 @@ public interface PatientService {
 
     // CRUD Patient
     PatientResponseDTO createPatient(PatientCreateDTO dto);
+    PatientInfoDTO getPatientInfo(Long id);
     PatientResponseDTO getPatient(Long id);
     PatientResponseDTO updatePatient(Long id, PatientUpdateDTO dto);
     void deletePatient(Long id);
