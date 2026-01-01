@@ -2,6 +2,7 @@ package com.example.rendezvousservice.service.impl;
 
 import com.example.rendezvousservice.client.notification.NotificationClient;
 import com.example.rendezvousservice.client.notification.NotificationDTO;
+import com.example.rendezvousservice.client.notification.NotificationDossierDTO;
 import com.example.rendezvousservice.client.patient.DossierMedicalDTO;
 import com.example.rendezvousservice.client.patient.PatientClient;
 
@@ -49,11 +50,10 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 dto.getDateRdv(),
                 dto.getHeureRdv(),
                 StatutRendezVous.ANNULE,
-                StatutRendezVous.TERMINE
-        ).ifPresent(rdv -> {
-            log.warn("⚠️ Créneau déjà occupé: {} à {}", dto.getDateRdv(), dto.getHeureRdv());
-            throw new RendezVousException("Ce créneau est déjà occupé");
-        });
+                StatutRendezVous.TERMINE).ifPresent(rdv -> {
+                    log.warn("⚠️ Créneau déjà occupé: {} à {}", dto.getDateRdv(), dto.getHeureRdv());
+                    throw new RendezVousException("Ce créneau est déjà occupé");
+                });
 
         // 2. Vérifier que le patient existe
         PatientInfoDTO patientInfo = patientClient.getPatientInfo(dto.getIdPatient());
@@ -120,13 +120,12 @@ public class RendezVousServiceImpl implements IRendezVousService {
                     nouvelleDate,
                     nouvelleHeure,
                     StatutRendezVous.ANNULE,
-                    StatutRendezVous.TERMINE
-            ).ifPresent(existing -> {
-                if (!existing.getId().equals(id)) {
-                    log.warn("⚠️ Nouveau créneau déjà occupé: {} à {}", nouvelleDate, nouvelleHeure);
-                    throw new RendezVousException("Ce créneau est déjà occupé");
-                }
-            });
+                    StatutRendezVous.TERMINE).ifPresent(existing -> {
+                        if (!existing.getId().equals(id)) {
+                            log.warn("⚠️ Nouveau créneau déjà occupé: {} à {}", nouvelleDate, nouvelleHeure);
+                            throw new RendezVousException("Ce créneau est déjà occupé");
+                        }
+                    });
 
             rendezVous.setDateRdv(nouvelleDate);
             rendezVous.setHeureRdv(nouvelleHeure);
@@ -138,7 +137,6 @@ public class RendezVousServiceImpl implements IRendezVousService {
             rendezVous.setMotif(dto.getMotif());
             log.info("📋 Motif modifié: {}", dto.getMotif());
         }
-
 
         // 5. Sauvegarder les modifications
         RendezVous updated = repository.save(rendezVous);
@@ -181,7 +179,6 @@ public class RendezVousServiceImpl implements IRendezVousService {
         StatutRendezVous ancienStatut = rendezVous.getStatut();
         rendezVous.setStatut(dto.getStatut());
 
-
         RendezVous updated = repository.save(rendezVous);
         log.info("✅ Statut changé de {} à {}", ancienStatut, dto.getStatut());
 
@@ -202,8 +199,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
 
         List<RendezVous> rendezVousList = repository.findByIdPatientAndStatutNot(
                 patientId,
-                StatutRendezVous.ANNULE
-        );
+                StatutRendezVous.ANNULE);
 
         log.info("📊 {} rendez-vous trouvés pour le patient ID: {}", rendezVousList.size(), patientId);
 
@@ -220,8 +216,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
         List<RendezVous> rendezVousList = repository.findByIdMedecinAndDateRdvAndStatutNot(
                 medecinId,
                 date,
-                StatutRendezVous.ANNULE
-        );
+                StatutRendezVous.ANNULE);
 
         log.info("📊 {} rendez-vous trouvés pour le médecin ID: {} le {}",
                 rendezVousList.size(), medecinId, date);
@@ -242,8 +237,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 medecinId,
                 aujourdhui,
                 StatutRendezVous.ANNULE,
-                StatutRendezVous.TERMINE
-        );
+                StatutRendezVous.TERMINE);
 
         log.info("📊 {} rendez-vous aujourd'hui pour le médecin ID: {}",
                 rendezVousList.size(), medecinId);
@@ -275,8 +269,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                     date,
                     heureCourante,
                     StatutRendezVous.ANNULE,
-                    StatutRendezVous.TERMINE
-            ).isEmpty();
+                    StatutRendezVous.TERMINE).isEmpty();
 
             creneaux.add(DisponibilitesDTO.CreneauDTO.builder()
                     .heure(heureCourante)
@@ -311,8 +304,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
         List<RendezVous> listeAttente = repository.findListeAttenteByMedecinAndDate(
                 medecinId,
                 aujourdhui,
-                StatutRendezVous.PRESENT
-        );
+                StatutRendezVous.PRESENT);
 
         log.info("📊 {} patients dans la liste d'attente", listeAttente.size());
 
@@ -341,8 +333,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
         Integer maxOrdre = repository.findMaxOrdrePassage(
                 rendezVous.getIdMedecin(),
                 rendezVous.getDateRdv(),
-                StatutRendezVous.PRESENT
-        );
+                StatutRendezVous.PRESENT);
         int nouvelOrdre = (maxOrdre != null ? maxOrdre : 0) + 1;
 
         try {
@@ -392,11 +383,10 @@ public class RendezVousServiceImpl implements IRendezVousService {
         RendezVous patientSuivant = repository.findPatientSuivant(
                 medecinId,
                 aujourdhui,
-                StatutRendezVous.PRESENT
-        ).orElseThrow(() -> {
-            log.warn("⚠️ Aucun patient en attente pour le médecin ID: {}", medecinId);
-            return new RendezVousException("Aucun patient en attente pour ce médecin");
-        });
+                StatutRendezVous.PRESENT).orElseThrow(() -> {
+                    log.warn("⚠️ Aucun patient en attente pour le médecin ID: {}", medecinId);
+                    return new RendezVousException("Aucun patient en attente pour ce médecin");
+                });
 
         log.info("✅ Patient suivant trouvé - Ordre: {}, RDV ID: {}",
                 patientSuivant.getOrdrePassage(), patientSuivant.getId());
@@ -416,8 +406,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
             Optional<RendezVous> patientSuivantOpt = repository.findPatientSuivant(
                     medecinId,
                     dateRdv,
-                    StatutRendezVous.PRESENT
-            );
+                    StatutRendezVous.PRESENT);
 
             if (patientSuivantOpt.isPresent()) {
                 RendezVous patientSuivant = patientSuivantOpt.get();
@@ -428,6 +417,20 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 // Récupérer le DOSSIER MÉDICAL COMPLET du patient suivant
                 DossierMedicalDTO dossier = patientClient.getDossierMedical(patientSuivant.getIdPatient());
 
+                NotificationDossierDTO dossierComplet = NotificationDossierDTO.builder()
+                        .nom(patientInfo.getNom())
+                        .prenom(patientInfo.getPrenom())
+                        .email(patientInfo.getEmail())
+                        .telephone(patientInfo.getTelephone())
+                        .idDossier(dossier.getIdDossier())
+                        .antecedentsMedicaux(dossier.getAntecedentsMedicaux())
+                        .antecedentsChirurgicaux(dossier.getAntecedentsChirurgicaux())
+                        .allergies(dossier.getAllergies())
+                        .groupeSanguin(dossier.getGroupeSanguin())
+                        .remarques(dossier.getRemarques())
+                        .dateCreation(dossier.getDateCreation())
+                        .build();
+
                 // Créer la notification avec le dossier complet
                 NotificationDTO notification = NotificationDTO.builder()
                         .userId(medecinId)
@@ -436,7 +439,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                                 patientSuivant.getOrdrePassage(),
                                 patientInfo.getPrenom(),
                                 patientInfo.getNom()))
-                        .dossierPatient(dossier)
+                        .dossierPatient(dossierComplet)
                         .build();
 
                 notificationClient.sendNotification(notification);

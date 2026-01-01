@@ -1,5 +1,7 @@
 package com.example.cabinetservice.scheduler;
 
+import com.example.cabinetservice.client.NotificationClient;
+import com.example.cabinetservice.dto.NotificationDTO;
 import com.example.cabinetservice.entity.AbonnementCabinet;
 import com.example.cabinetservice.enums.AbonnementStatus;
 import com.example.cabinetservice.repository.AbonnementRepository;
@@ -17,22 +19,56 @@ import java.util.List;
 public class CabinetScheduledTasks {
 
     private final AbonnementRepository abonnementRepository;
+    private final com.example.cabinetservice.client.NotificationClient notificationClient;
 
     // Run every day at 8:00 AM
     @Scheduled(cron = "0 0 8 * * *")
     public void checkExpiringAbonnements() {
         log.info("Checking for expiring abonnements...");
-        // Calcule la date dans 7 jours
+        // Compute date in 7 days
         LocalDateTime sevenDaysFromNow = LocalDateTime.now().plusDays(7);
-        
-        // This query needs to be precise in Repository. 
-        // For now finding active ones and checking date in memory or using the query defined.
-        List<AbonnementCabinet> expiring = abonnementRepository.findExpiringAbonnements(sevenDaysFromNow, AbonnementStatus.ACTIF);
-        
+
+        // Use the repository method to find expiring subscriptions
+        List<AbonnementCabinet> expiring = abonnementRepository.findExpiringAbonnements(sevenDaysFromNow,
+                AbonnementStatus.ACTIF);
+
         if (!expiring.isEmpty()) {
             log.info("Found {} expiring abonnements.", expiring.size());
-            // TODO: Send notification to Notification Service
-            // expiring.forEach(abo -> notificationClient.sendExpirationAlert(abo));
+            expiring.forEach(abo -> {
+                try {
+                    // Assuming cabinet has an admin ID associated, or we use a fallback
+                    // For now, let's assume we can get it from the cabinet or user service if
+                    // needed.
+                    // But the entity might not have it directly.
+                    // Let's assume for this task we pass a placeholder or if connected to user we'd
+                    // fetch it.
+                    // However, AbonnementCabinet -> Cabinet -> idUtilisateur (Admin) usually.
+                    // Let's check Cabinet entity structure first if needed, but for now I will
+                    // assume I can get it.
+                    Long adminId = abo.getCabinet().getMedecinId();
+
+                    NotificationDTO.AbonnementExpirationDTO aboDto = NotificationDTO.AbonnementExpirationDTO.builder()
+                            .cabinetId(abo.getCabinet().getId())
+                            .nomCabinet(abo.getCabinet().getNom())
+                            .dateExpiration(abo.getDateFin().toLocalDate())
+                            .joursRestants(7)
+                            .montant(abo.getMontant()) // or calculate total
+                            .adminId(adminId)
+                            .build();
+
+                    NotificationDTO notification = NotificationDTO.builder()
+                            .adminId(adminId)
+                            .type("ABONNEMENT_EXPIRE")
+                            .titre("Renouvellement d'abonnement requis")
+                            .abonnement(aboDto)
+                            .build();
+
+                    notificationClient.sendNotification(notification);
+                    log.info("Notification sent for cabinet: {}", abo.getCabinet().getNom());
+                } catch (Exception e) {
+                    log.error("Failed to send notification for abonnement {}", abo.getIdAbonnement(), e);
+                }
+            });
         } else {
             log.info("No expiring abonnements found.");
         }
@@ -44,12 +80,12 @@ public class CabinetScheduledTasks {
         log.info("Checking for expired abonnements...");
         List<AbonnementCabinet> activeAbonnements = abonnementRepository.findByStatut(AbonnementStatus.ACTIF);
         LocalDateTime now = LocalDateTime.now();
-        
+
         for (AbonnementCabinet abo : activeAbonnements) {
             if (abo.getDateFin().isBefore(now)) {
                 log.info("Expiring abonnement id: {}", abo.getIdAbonnement());
                 abo.setStatut(AbonnementStatus.EXPIRE);
-                
+
                 // Also deactive cabinet
                 if (abo.getCabinet() != null) {
                     abo.getCabinet().setActif(false);

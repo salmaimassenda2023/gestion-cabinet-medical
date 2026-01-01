@@ -12,15 +12,15 @@
         <module name="rendezVous-service" />
         <module name="discovry-server" />
         <module name="gateway" />
-        <module name="notification-service" />
       </profile>
-      <profile name="Annotation profile for cabinet-service" enabled="true">
+      <profile name="Annotation profile for notification-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar" />
         </processorPath>
+        <module name="notification-service" />
         <module name="cabinet-service" />
         <module name="utilisateur-service" />
       </profile>
@@ -30,7 +30,7 @@
       <module name="config-server" target="19" />
       <module name="discovry-server" target="19" />
       <module name="gateway" target="19" />
-      <module name="notification-service" target="1.5" />
+      <module name="notification-service" target="19" />
       <module name="patient-service" target="19" />
       <module name="rendezVous-service" target="19" />
       <module name="utilisateur-service" target="19" />
@@ -42,6 +42,7 @@
       <module name="config-server" options="-parameters" />
       <module name="discovry-server" options="-parameters" />
       <module name="gateway" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
       <module name="patient-service" options="-parameters" />
       <module name="rendezVous-service" options="-parameters" />
       <module name="utilisateur-service" options="-parameters" />
