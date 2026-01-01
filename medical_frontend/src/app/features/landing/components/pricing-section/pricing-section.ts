@@ -13,31 +13,30 @@ export class PricingSectionComponent {
   constructor(private router: Router) { }
 
   navigateToOnboarding(plan: string) {
-    this.router.navigate(['/doctor-onboarding'], { queryParams: { plan } }); // Updated path to match likely route
+    this.router.navigate(['/onboarding'], { queryParams: { plan } }); // Updated path to match likely route
   }
 
   plans = [
     {
-      name: "Monthly",
-      price: "$49",
-      period: "/month",
-      description: "Perfect for getting started",
+      name: "Manual",
+      price: "Free",
+      period: "/forever",
+      description: "Perfect for testing or small practices",
       features: [
-        "Up to 200 appointments/month",
-        "Patient management",
-        "Digital records storage",
-        "Payment processing",
-        "Email support",
+        "Up to 50 appointments/month",
+        "Basic patient management",
+        "Standard support",
+        "Manual payment handling"
       ],
       popular: false,
       cta: "Start",
     },
     {
-      name: "Annual",
-      price: "$39",
+      name: "Monthly",
+      price: "$29.99",
       period: "/month",
-      description: "Save 20% with yearly billing",
-      originalPrice: "$49",
+      description: "Full access for growing clinics",
+      originalPrice: "$49.99",
       features: [
         "Unlimited appointments",
         "Advanced patient management",

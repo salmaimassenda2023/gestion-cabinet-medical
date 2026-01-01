@@ -15,4 +15,6 @@ public class CabinetUpdateDTO {
     private String adresse;
     private String tel;
     private String logo;
+    private Integer maxPatientsJour;
+    private Integer dureeConsultation;
 }

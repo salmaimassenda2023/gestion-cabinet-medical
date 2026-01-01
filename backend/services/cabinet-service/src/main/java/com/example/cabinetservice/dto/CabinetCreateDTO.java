@@ -1,7 +1,5 @@
 package com.example.cabinetservice.dto;
 
-
-
 import com.example.cabinetservice.enums.TypePeriode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +15,8 @@ public class CabinetCreateDTO {
     private String specialite;
     private String adresse;
     private String tel;
+    private Integer maxPatientsJour;
+    private Integer dureeConsultation;
     private String logo;
     private Long medecinId;
     private AbonnementCreateDTO abonnement;

@@ -18,6 +18,8 @@ public class CabinetResponseDTO {
     private String adresse;
     private String tel;
     private String logo;
+    private Integer maxPatientsJour;
+    private Integer dureeConsultation;
     private Boolean actif;
     private AbonnementResponseDTO abonnement;
     private List<ServiceConsultationDTO> services;

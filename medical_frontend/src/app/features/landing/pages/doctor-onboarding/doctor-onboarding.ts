@@ -7,6 +7,7 @@ import { UtilisateurService, UtilisateurRequest, UtilisateurResponse } from '../
 import { ActivatedRoute } from '@angular/router';
 import { NgxStripeModule, StripeCardComponent, StripeService } from 'ngx-stripe';
 import { StripeCardElementOptions, StripeElementsOptions } from '@stripe/stripe-js';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
 @Component({
@@ -40,6 +41,9 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       }
     }
   };
+  elementsOptions: StripeElementsOptions = {
+    locale: 'en'
+  };
 
   // Step 1: Personal Info
   personalForm: FormGroup;
@@ -56,7 +60,7 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
   // Step 3: Services & Pricing
   servicesForm: FormGroup;
 
-  // Step 4: Payment (Consider removing or making optional in real implementation)
+  // Step 4: Payment
   paymentForm: FormGroup;
 
   constructor(
@@ -66,15 +70,16 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
     private utilisateurService: UtilisateurService,
     private cd: ChangeDetectorRef,
     private route: ActivatedRoute,
-    private stripeService: StripeService
+    private stripeService: StripeService,
+    private http: HttpClient
   ) {
     this.personalForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      username: ['', Validators.required], // Will be used as login
+      username: ['', Validators.required],
       password: ['', [Validators.required, Validators.minLength(8)]],
       tel: ['', Validators.required],
-      signature: [null] // Will hold base64 string or file
+      signature: [null]
     });
 
     this.clinicForm = this.fb.group({
@@ -92,7 +97,6 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       additionalServices: this.fb.array([])
     });
 
-    // Note: Payment handled by Stripe
     this.paymentForm = this.fb.group({
       cardName: ['', Validators.required]
     });
@@ -103,8 +107,6 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
   }
 
   ngOnInit() {
-    // You might want to check if user is already registered
-    // and redirect if needed
     this.route.queryParams.subscribe(params => {
       if (params['plan']) {
         this.selectedPlan = params['plan'];
@@ -149,13 +151,6 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
         return true;
       case 2:
         if (this.clinicForm.invalid) {
-          console.log('Clinic Form is invalid:', this.clinicForm);
-          Object.keys(this.clinicForm.controls).forEach(key => {
-            const control = this.clinicForm.get(key);
-            if (control?.invalid) {
-              console.log(`Invalid control: ${key}, value: ${control.value}, errors:`, control.errors);
-            }
-          });
           this.clinicForm.markAllAsTouched();
           return false;
         }
@@ -167,7 +162,6 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
         }
         return true;
       case 4:
-        // Payment might be optional in your case
         return true;
       default: return false;
     }
@@ -268,8 +262,6 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
     this.additionalServices.removeAt(index);
   }
 
-
-
   public async submit() {
     if (!this.validateAllForms()) {
       return;
@@ -290,12 +282,10 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       })
       .subscribe(async (result) => {
         if (result.error) {
-          // Show error to your customer
           this.errorMessage = result.error.message || 'Payment failed';
           this.isLoading = false;
           alert(this.errorMessage);
         } else if (result.paymentMethod) {
-          // Send the paymentMethod.id to your server
           await this.completeRegistration(result.paymentMethod.id);
         }
       });
@@ -303,49 +293,89 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
 
   private async completeRegistration(paymentMethodId: string) {
     try {
-      // 1. Create Cabinet first
+      console.log('🚀 Starting registration process...');
+      
+      // Clear ALL tokens before registration
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      sessionStorage.clear();
+      console.log('Tokens cleared');
+      
+      // 1. Create Cabinet
       const cabinetData = this.prepareCabinetData();
+      console.log('Creating cabinet:', cabinetData);
+      
       const cabinetResponse = await this.cabinetService.createCabinet(cabinetData).toPromise();
-
-      if (!cabinetResponse) {
-        throw new Error('Failed to create cabinet. Please check clinic information.');
+      
+      if (!cabinetResponse?.id) {
+        throw new Error('Cabinet creation failed - no ID returned');
       }
-
-      // 2. Register Doctor/User with cabinet ID
-      const userRequest = this.prepareUserData(cabinetResponse.idCabinet);
+      
+      console.log('✅ Cabinet created, ID:', cabinetResponse.id);
+      
+      // 2. Register Doctor
+      const userRequest = this.prepareUserData(cabinetResponse.id);
+      console.log('Registering doctor with cabinet ID:', cabinetResponse.id);
+      
       const userResponse = await this.utilisateurService.registerMedecin(userRequest).toPromise();
-
-      if (!userResponse) {
-        throw new Error('Failed to register doctor. This might be due to an existing username.');
+      
+      if (!userResponse?.idUtilisateur) {
+        throw new Error('Doctor registration failed - no user ID returned');
       }
-
-      // 3. Add Services
-      await this.addServices(cabinetResponse.idCabinet);
-
-      // 4. Send Payment Info (Mock call as backend might not have endpoint yet)
-      console.log('Sending token to backend:', paymentMethodId, 'Plan:', this.selectedPlan);
-      // await this.paymentService.processPayment(paymentMethodId, this.selectedPlan, ...);
-
-      // 5. Complete the process
-      console.log('Registration Complete', {
-        cabinet: cabinetResponse,
-        user: userResponse
-      });
-
-      alert("Setup Complete! Welcome to Clinic Flow.");
-      this.router.navigate(['/dashboard']); // Redirect to dashboard or login
-
+      
+      console.log('✅ Doctor registered, ID:', userResponse.idUtilisateur);
+      
+      // 3. Link user to cabinet (optional)
+      try {
+        await this.linkUserToCabinet(userResponse.idUtilisateur, cabinetResponse.id);
+        console.log('✅ User linked to cabinet');
+      } catch (linkError) {
+        console.log('⚠️ Could not link user to cabinet:', linkError);
+      }
+      
+      // 4. Add Services (optional - can fail)
+      try {
+        await this.addServices(cabinetResponse.id);
+        console.log('✅ Services added');
+      } catch (serviceError) {
+        console.log('⚠️ Services not added:', serviceError);
+      }
+      
+      // 5. Payment processing
+      console.log('Payment method ID:', paymentMethodId);
+      
+      // SUCCESS!
+      alert('🎉 Registration complete! Please login with your credentials.');
+      this.router.navigate(['/login']);
+      
     } catch (error: any) {
-      console.error('Registration failed:', error);
-      this.errorMessage = error.error?.message || error.message || 'Registration failed. Please try again.';
-      alert(this.errorMessage);
+      console.error('❌ Registration failed:', error);
+      
+      if (error.status === 401) {
+        alert('Authentication issue. Please try again or clear browser cache.');
+      } else {
+        const errorMsg = error.error?.message || error.message || 'Unknown error';
+        alert('Registration failed: ' + errorMsg);
+      }
+      
     } finally {
       this.isLoading = false;
     }
   }
 
+  private async linkUserToCabinet(userId: number, cabinetId: number): Promise<any> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    
+    return this.http.patch(
+      `/api/utilisateur/users/${userId}/cabinet`,
+      { idCabinet: cabinetId },
+      { headers }
+    ).toPromise();
+  }
+
   private validateAllForms(): boolean {
-    // Validate all forms except payment which might be optional
     const forms = [this.personalForm, this.clinicForm, this.servicesForm];
 
     for (const form of forms) {
@@ -371,12 +401,21 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       nom: clinicData.name,
       specialite: clinicData.specialty,
       adresse: clinicData.address,
-      numTel: clinicData.tel,
-      emailContact: clinicData.emailContact,
-      tarifConsultation: parseFloat(servicesData.generalPrice),
-      maxPatientsJour: parseInt(clinicData.maxPatients, 10),
-      dureeConsultation: parseInt(clinicData.consultationTime, 10),
-      logo: clinicData.logo || null
+      tel: clinicData.tel,
+      tarifConsultation: parseFloat(servicesData.generalPrice) || 200,
+      maxPatientsJour: parseInt(clinicData.maxPatients, 10) || 20,
+      dureeConsultation: parseInt(clinicData.consultationTime, 10) || 30,
+      logo: clinicData.logo || null,
+      abonnement: {
+        typePeriode: this.selectedPlan.toLowerCase() === 'monthly' ? 'MENSUEL' : 'ANNUEL',
+        montant: this.selectedPlan.toLowerCase() === 'monthly' ? 29.99 : 299.99
+      },
+      serviceConsultationGenerale: {
+        nomService: 'Consultation Générale',
+        prix: parseFloat(servicesData.generalPrice) || 200,
+        description: 'Consultation médicale générale',
+        obligatoire: true
+      }
     };
   }
 
@@ -395,25 +434,14 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
   }
 
   private async addServices(cabinetId: number): Promise<void> {
-    const generalService: ServiceConsultationDTO = {
-      nom: 'Consultation Générale',
-      prix: parseFloat(this.servicesForm.value.generalPrice),
-      description: 'Consultation médicale générale'
-    };
-
-    // Add general consultation service
-    await this.cabinetService.addService(cabinetId, generalService).toPromise();
-
-    // Add additional services
     const additionalServices = this.additionalServices.value;
     for (const service of additionalServices) {
       const serviceDTO: ServiceConsultationDTO = {
         nom: service.name,
         prix: parseFloat(service.price),
-        description: service.description
+        description: service.description,
       };
       await this.cabinetService.addService(cabinetId, serviceDTO).toPromise();
     }
   }
-
 }

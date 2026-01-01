@@ -17,4 +17,6 @@ public class PaiementResponseDTO {
     private LocalDateTime datePaiement;
     private Double montant;
     private PaiementStatus statut;
+    private String cabinetNom;
+    private String cabinetLogo;
 }

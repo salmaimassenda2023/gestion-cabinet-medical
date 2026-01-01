@@ -51,14 +51,14 @@ public class CabinetServiceImpl implements CabinetService {
 
         // 1. Create Cabinet (INACTIF par défaut)
         Cabinet cabinet = cabinetMapper.toEntity(dto);
-        cabinet.setActif(false);  // ← FORCER À FALSE
+        cabinet.setActif(false); // ← FORCER À FALSE
         cabinet = cabinetRepository.save(cabinet);
 
         // 2. Create and Link Abonnement (SUSPENDU par défaut)
         if (dto.getAbonnement() != null) {
             AbonnementCabinet abonnement = cabinetMapper.toEntity(dto.getAbonnement());
             abonnement.setCabinet(cabinet);
-            abonnement.setStatut(AbonnementStatus.SUSPENDU);  // ← SUSPENDU au lieu de ACTIF
+            abonnement.setStatut(AbonnementStatus.SUSPENDU); // ← SUSPENDU au lieu de ACTIF
             abonnement.setDateDebut(LocalDateTime.now());
 
             if ("ANNUEL".equalsIgnoreCase(abonnement.getTypePeriode().name())) {
@@ -134,6 +134,10 @@ public class CabinetServiceImpl implements CabinetService {
             cabinet.setTel(dto.getTel());
         if (dto.getLogo() != null)
             cabinet.setLogo(dto.getLogo());
+        if (dto.getMaxPatientsJour() != null)
+            cabinet.setMaxPatientsJour(dto.getMaxPatientsJour());
+        if (dto.getDureeConsultation() != null)
+            cabinet.setDureeConsultation(dto.getDureeConsultation());
 
         Cabinet updatedCabinet = cabinetRepository.save(cabinet);
         return cabinetMapper.toDto(updatedCabinet);
@@ -166,6 +170,7 @@ public class CabinetServiceImpl implements CabinetService {
         ServiceConsultation savedService = serviceConsultationRepository.save(service);
         return cabinetMapper.toDto(savedService);
     }
+
     @Override
     public ServiceConsultationDTO getServiceById(Long cabinetId, Long serviceId) {
         log.info("Recherche du service avec ID: {} pour le cabinet ID: {}", serviceId, cabinetId);
@@ -189,6 +194,7 @@ public class CabinetServiceImpl implements CabinetService {
 
         return cabinetMapper.toDto(service);
     }
+
     @Override
     public List<ServiceConsultationDTO> getServices(Long cabinetId) {
         if (!cabinetRepository.existsById(cabinetId)) {
@@ -196,6 +202,36 @@ public class CabinetServiceImpl implements CabinetService {
         }
         return serviceConsultationRepository.findByCabinetId(cabinetId).stream()
                 .map(cabinetMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CabinetResponseDTO> getAllCabinets() {
+        return cabinetRepository.findAll().stream()
+                .map(cabinetMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PaiementResponseDTO> getAllPaiements() {
+        return paiementRepository.findAll().stream()
+                .map(p -> {
+                    String cabinetNom = "Unknown";
+                    String cabinetLogo = null;
+                    if (p.getAbonnement() != null && p.getAbonnement().getCabinet() != null) {
+                        cabinetNom = p.getAbonnement().getCabinet().getNom();
+                        cabinetLogo = p.getAbonnement().getCabinet().getLogo();
+                    }
+                    return PaiementResponseDTO.builder()
+                            .idPaiement(p.getIdPaiement())
+                            .datePaiement(p.getDatePaiement())
+                            .montant(p.getMontant())
+                            .statut(p.getStatut())
+                            .cabinetNom(cabinetNom)
+                            .cabinetLogo(cabinetLogo)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

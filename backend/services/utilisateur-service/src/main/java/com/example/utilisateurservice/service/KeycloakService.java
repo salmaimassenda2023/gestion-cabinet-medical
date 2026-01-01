@@ -42,7 +42,7 @@ public class KeycloakService {
     }
 
     public String createUser(String username, String password, String firstName,
-                             String lastName, String email, Utilisateur.Role role) {
+            String lastName, String email, Utilisateur.Role role) {
         try {
             UserRepresentation user = new UserRepresentation();
             user.setUsername(username);
@@ -135,5 +135,17 @@ public class KeycloakService {
         }
     }
 
+    public void updateUserStatus(String keycloakId, boolean enabled) {
+        try {
+            UserResource userResource = realmResource.users().get(keycloakId);
+            UserRepresentation user = userResource.toRepresentation();
+            user.setEnabled(enabled);
+            userResource.update(user);
 
+            log.info("✅ Statut utilisateur mis à jour dans Keycloak: {} -> {}", keycloakId, enabled);
+        } catch (Exception e) {
+            log.error("❌ Erreur lors de la mise à jour du statut dans Keycloak", e);
+            throw new RuntimeException("Erreur Keycloak: " + e.getMessage());
+        }
+    }
 }

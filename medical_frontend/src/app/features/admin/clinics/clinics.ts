@@ -51,7 +51,7 @@ export class ClinicsComponent implements OnInit {
     loadClinics() {
         this.cabinetService.getAllCabinets().subscribe(cabinets => {
             this.allClinics = cabinets.map(c => ({
-                id: c.idCabinet.toString(),
+                id: c.id.toString(),
                 logo: c.logo || 'assets/clinic-1.png', // Placeholder if null
                 name: c.nom,
                 address: c.adresse,
@@ -101,12 +101,22 @@ export class ClinicsComponent implements OnInit {
     }
 
     onSaveNewClinic(newClinicData: Partial<Clinic>): void {
-        const newClinic: Clinic = {
-            ...newClinicData as Clinic,
-            id: `CL-00${this.clinics.length + 1}`
+        const cabinetData = {
+            nom: newClinicData.name,
+            adresse: newClinicData.address,
+            numTel: newClinicData.phone,
+            emailContact: 'contact@example.com', // Placeholder or add to form
+            tarifConsultation: 300, // Default or add to form
+            specialite: newClinicData.specialty || 'General'
         };
-        this.clinics = [...this.clinics, newClinic];
-        this.isAddModalOpen = false;
+
+        this.cabinetService.createCabinet(cabinetData).subscribe({
+            next: () => {
+                this.loadClinics();
+                this.isAddModalOpen = false;
+            },
+            error: (err) => console.error('Error creating clinic:', err)
+        });
     }
 
     editClinic(clinic: Clinic): void {
@@ -116,11 +126,21 @@ export class ClinicsComponent implements OnInit {
 
     onUpdateClinic(updatedData: Partial<Clinic>): void {
         if (this.selectedClinic) {
-            this.clinics = this.clinics.map(c =>
-                c.id === this.selectedClinic!.id ? { ...c, ...updatedData } : c
-            );
-            this.isEditModalOpen = false;
-            this.selectedClinic = undefined;
+            const cabinetData = {
+                nom: updatedData.name,
+                adresse: updatedData.address,
+                numTel: updatedData.phone,
+                specialite: updatedData.specialty
+            };
+
+            this.cabinetService.updateCabinet(parseInt(this.selectedClinic.id), cabinetData).subscribe({
+                next: () => {
+                    this.loadClinics();
+                    this.isEditModalOpen = false;
+                    this.selectedClinic = undefined;
+                },
+                error: (err) => console.error('Error updating clinic:', err)
+            });
         }
     }
 
@@ -131,9 +151,14 @@ export class ClinicsComponent implements OnInit {
 
     confirmDelete(): void {
         if (this.selectedClinic) {
-            this.clinics = this.clinics.filter(c => c.id !== this.selectedClinic!.id);
-            this.isDeleteModalOpen = false;
-            this.selectedClinic = undefined;
+            this.cabinetService.deleteCabinet(parseInt(this.selectedClinic.id)).subscribe({
+                next: () => {
+                    this.loadClinics();
+                    this.isDeleteModalOpen = false;
+                    this.selectedClinic = undefined;
+                },
+                error: (err) => console.error('Error deleting clinic:', err)
+            });
         }
     }
 

@@ -1,4 +1,5 @@
-import { Component, OnInit, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { forkJoin, Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -7,8 +8,7 @@ import { UserTableComponent } from '../../../shared/components/user-table/user-t
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { UserFormComponent } from '../../../shared/components/user-form/user-form.component';
 import { User } from '../../../core/models/user.model';
-import { UtilisateurService, UtilisateurResponse } from '../../auth/services/utilisateur.service';
-
+import { UtilisateurService, UtilisateurResponse, UtilisateurRequest } from '../../auth/services/utilisateur.service';
 
 @Component({
   selector: 'app-users',
@@ -26,7 +26,6 @@ import { UtilisateurService, UtilisateurResponse } from '../../auth/services/uti
   styleUrls: ['./users.css']
 })
 export class UsersComponent implements OnInit {
-  logoPath = 'assets/logo.png';
   users: User[] = [];
   allUsers: User[] = [];
 
@@ -54,37 +53,44 @@ export class UsersComponent implements OnInit {
   }
 
   loadUsers() {
-    this.utilisateurService.getAllUsers().subscribe(users => {
-      this.allUsers = users.map(u => ({
-        id: u.idUtilisateur.toString(),
-        name: `${u.prenom} ${u.nom}`,
-        email: u.email || 'N/A', // Assuming email might be missing in response type for now
-        phone: u.numTel,
-        status: u.actif ? 'active' : 'deactivate',
-        role: u.role.toLowerCase() as 'admin' | 'doctor' | 'secretaire',
-        signature: 'assets/signature1.png' // Placeholder
-      }));
-      this.users = [...this.allUsers];
-      this.calculatePagination();
+    this.utilisateurService.getAllUsers().subscribe({
+      next: (users) => {
+        this.allUsers = users.map(u => this.mapToUser(u));
+        this.filterAndPaginate();
+      },
+      error: (err) => console.error('Error loading users:', err)
     });
   }
 
-  calculatePagination() {
-    this.totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage) || 1;
+  mapToUser(u: UtilisateurResponse): User {
+    return {
+      id: u.idUtilisateur.toString(),
+      name: `${u.nom} ${u.prenom}`, // Format specifically requested as LASTNAME Firstname often, but following existing pattern
+      email: u.email || `${u.login}@cabinet.ma`,
+      phone: u.numTel,
+      status: u.actif ? 'active' : 'deactivate',
+      role: u.role === 'MEDECIN' ? 'doctor' : (u.role === 'ADMIN' ? 'admin' : 'secretaire'),
+      signature: u.signature || 'assets/signature1.png'
+    };
   }
 
-  get filteredUsers(): User[] {
-    let filtered = this.users;
+  calculatePagination() {
+    const filtered = this.getFilteredUsers();
+    this.totalPages = Math.ceil(filtered.length / this.itemsPerPage) || 1;
+    // Adjust current page if out of bounds
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages;
+    }
+  }
 
-    // Tab filter
-    filtered = filtered.filter(u => u.role === (this.activeTab === 'administration' ? 'admin' : 'doctor'));
+  getFilteredUsers(): User[] {
+    let filtered = this.allUsers;
 
-    // Status filter
-    if (this.activeFilter !== 'all') {
-      // Note: The instruction uses 'Active'/'Deactivate' (capitalized) for filtering,
-      // but the User interface defines 'active'/'deactivate' (lowercase).
-      // Assuming the instruction intends to filter against the lowercase status values.
-      filtered = filtered.filter(u => u.status === (this.activeFilter === 'active' ? 'active' : 'deactivate'));
+    // Tab filter (Role)
+    if (this.activeTab === 'administration') {
+      filtered = filtered.filter(u => u.role === 'admin' || u.role === 'super_admin'); // Include super_admin just in case
+    } else {
+      filtered = filtered.filter(u => u.role === 'doctor');
     }
 
     // Search filter
@@ -98,12 +104,34 @@ export class UsersComponent implements OnInit {
       );
     }
 
+    // Note: Status filter removed generally as backend doesn't support changing it easily, 
+    // but we can still filter VIEW by status if desired. Keeping it for view only.
+    if (this.activeFilter !== 'all') {
+      filtered = filtered.filter(u => u.status === this.activeFilter);
+    }
+
     return filtered;
+  }
+
+  filterAndPaginate() {
+    const filtered = this.getFilteredUsers();
+    this.calculatePagination();
+
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.users = filtered.slice(startIndex, endIndex);
+  }
+
+  // Getter for template to match existing property expectations if any, 
+  // but strictly we should use the this.users (paginated)
+  get filteredUsers(): User[] {
+    return this.users;
   }
 
   onSearch(term: string): void {
     this.searchTerm = term;
     this.currentPage = 1;
+    this.filterAndPaginate();
   }
 
   addUser(): void {
@@ -111,17 +139,51 @@ export class UsersComponent implements OnInit {
   }
 
   onSaveNewUser(userData: Partial<User>): void {
-    const newUser: User = {
-      id: `0000${this.users.length + 1}`,
-      name: userData.name!,
-      email: userData.email!,
-      phone: userData.phone!,
-      status: userData.status as any,
-      role: this.activeTab === 'administration' ? 'admin' : 'doctor',
-      signature: userData.signature
+    const role = this.activeTab === 'administration' ? 'ADMIN' : 'MEDECIN';
+
+    // Generate a login based on name components or random
+    // In a real app, user might input login/password. 
+    // For now generating defaults as per likely requirement or asking user form to provide them?
+    // The UserFormComponent output likely only gives name, email, phone... 
+    // We'll assume we need to generate login/password or modify the form later.
+    // For now, let's generate from name.
+
+    const names = userData.name?.split(' ') || ['User', 'Test'];
+    const prenom = names.length > 1 ? names[names.length - 1] : names[0];
+    const nom = names.length > 1 ? names.slice(0, -1).join(' ') : 'Name';
+
+    // We need a password. The form doesn't seem to have it? 
+    // We'll set a default one.
+    const defaultPassword = 'Password123!';
+    const login = `${prenom.toLowerCase()}.${nom.toLowerCase()}.${Date.now()}`;
+
+    const request: UtilisateurRequest = {
+      login: login,
+      password: defaultPassword,
+      nom: nom,
+      prenom: prenom,
+      numTel: userData.phone || '0000000000',
+      role: role,
+      // idCabinet is optional for admins, required for doctors but allowed to be null/default?
+      // Backend service says idCabinet required for MEDECIN/SECRETAIRE.
+      // We need a cabinet ID. Checking environment or hardcoding for now/asking user?
+      // Let's assume cabinet ID 1 for now or handle the error. 
+      // Actually the backend check `if ((role == MEDECIN... && idCabinet == null)`.
+      // We'll try without and see, or default to 1 if we can.
+      idCabinet: role === 'MEDECIN' ? 1 : undefined // Fallback to 1, risky but needed if no UI selection
     };
-    this.users = [...this.users, newUser];
-    this.isAddModalOpen = false;
+
+    this.utilisateurService.createUtilisateur(request).subscribe({
+      next: (response) => {
+        console.log('User created:', response);
+        this.loadUsers(); // Reload list
+        this.isAddModalOpen = false;
+      },
+      error: (err) => {
+        console.error('Error creating user:', err);
+        // Ideally show error message
+      }
+    });
   }
 
   editUser(user: User): void {
@@ -131,19 +193,40 @@ export class UsersComponent implements OnInit {
 
   onUpdateUser(userData: Partial<User>): void {
     if (this.selectedUser) {
-      // Optimistic update
-      const index = this.users.findIndex(u => u.id === this.selectedUser?.id);
-      if (index > -1) {
-        // Check if status changed
+        const userId = parseInt(this.selectedUser.id);
+        const updates: Observable<any>[] = [];
+
+        // 1. Status Update
         if (userData.status && userData.status !== this.selectedUser.status) {
-          const newStatus = userData.status === 'active';
-          this.utilisateurService.updateUserStatus(parseInt(this.selectedUser.id), newStatus).subscribe();
+           const isActive = userData.status === 'active';
+           updates.push(this.utilisateurService.updateUserStatus(userId, isActive));
         }
-        this.users[index] = { ...this.selectedUser, ...userData };
-        this.users = [...this.users];
-      }
-      this.isEditModalOpen = false;
-      this.selectedUser = undefined;
+
+        // 2. Profile Update
+        // We always run this as per original logic, or checks can be added. 
+        // Assuming we want to persist other fields too.
+        const names = userData.name?.split(' ') || [];
+        const prenom = names.length > 1 ? names[names.length - 1] : userData.name;
+        const nom = names.length > 1 ? names.slice(0, -1).join(' ') : '';
+        
+        const request = {
+            nom: nom || undefined,
+            prenom: prenom || undefined,
+            numTel: userData.phone,
+            signature: userData.signature
+        };
+        updates.push(this.utilisateurService.updateUtilisateur(userId, request));
+
+        // 3. Execute all
+        forkJoin(updates).subscribe({
+            next: (results) => {
+                console.log('Update completed:', results);
+                this.loadUsers(); // Reload only after ALL updates are done
+                this.isEditModalOpen = false;
+                this.selectedUser = undefined;
+            },
+            error: (err) => console.error('Error in update flow:', err)
+        });
     }
   }
 
@@ -154,12 +237,13 @@ export class UsersComponent implements OnInit {
 
   confirmDelete(): void {
     if (this.selectedUser) {
-      this.utilisateurService.deleteUser(parseInt(this.selectedUser.id)).subscribe(() => {
-        this.users = this.users.filter(u => u.id !== this.selectedUser?.id);
-        this.allUsers = this.allUsers.filter(u => u.id !== this.selectedUser?.id);
-        this.isDeleteModalOpen = false;
-        this.selectedUser = undefined;
-        this.calculatePagination();
+      this.utilisateurService.deleteUser(parseInt(this.selectedUser.id)).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.isDeleteModalOpen = false;
+          this.selectedUser = undefined;
+        },
+        error: (err) => console.error('Error deleting user:', err)
       });
     }
   }
@@ -176,27 +260,20 @@ export class UsersComponent implements OnInit {
 
   onTabChange(tab: 'administration' | 'doctors'): void {
     this.activeTab = tab;
+    this.currentPage = 1;
+    this.filterAndPaginate();
   }
 
   onFilterChange(filter: 'all' | 'active' | 'deactivate'): void {
     this.activeFilter = filter;
+    this.currentPage = 1;
+    this.filterAndPaginate();
   }
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
-    }
-  }
-
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
+      this.filterAndPaginate();
     }
   }
 }

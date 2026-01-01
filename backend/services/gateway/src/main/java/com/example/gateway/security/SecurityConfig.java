@@ -5,107 +5,104 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
-import reactor.core.publisher.Mono;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
-/**
- * Configuration de sécurité pour le Gateway Service (WebFlux - Réactif)
- */
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> cors.disable()) // We'll handle CORS with our custom filter
-                .authorizeExchange(exchange -> exchange
-                        // Allow OPTIONS requests for CORS preflight
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
+        public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+                return http
+                        .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                        .authorizeExchange(exchange -> exchange
+                                // ============================================
+                                // PUBLIC ENDPOINTS - MUST BE FIRST
+                                // ============================================
+                                .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                .pathMatchers("/actuator/**", "/eureka/**").permitAll()
 
-                        // Public endpoints
-                        .pathMatchers(
-                                "/api/utilisateur/users/bootstrap/**",
-                                "/api/utilisateur/users/register/**",
-                                "/api/cabinet/webhooks/stripe/**",
-                                "/actuator/**",
-                                "/eureka/**"
-                        ).permitAll()
+                                // User Registration & Bootstrap
+                                .pathMatchers(HttpMethod.POST, "/api/utilisateur/users").permitAll()
+                                .pathMatchers(HttpMethod.POST, "/api/utilisateur/users/").permitAll()
+                                .pathMatchers("/api/utilisateur/users/bootstrap/**").permitAll()
+                                .pathMatchers("/api/utilisateur/users/register/**").permitAll()
+                                .pathMatchers(HttpMethod.PATCH, "/api/utilisateur/users/*/cabinet").permitAll()
 
-                        // All other endpoints require authentication
-                        .anyExchange().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(Customizer.withDefaults()))
-                .build();
-    }
+                                // Cabinet Creation & Management (public for registration)
+                                .pathMatchers(HttpMethod.POST, "/api/cabinet", "/api/cabinet/").permitAll()
+                                .pathMatchers(HttpMethod.POST, "/api/cabinet/*/services", "/api/cabinet/*/services/").permitAll()
+                                .pathMatchers(HttpMethod.GET, "/api/cabinet/**").permitAll()
 
-    @Bean
-    public CorsWebFilter corsWebFilter() {
-        CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:3000"));
-        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
-        corsConfig.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers",
-                "X-XSRF-TOKEN"
-        ));
-        corsConfig.setExposedHeaders(Arrays.asList(
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Credentials",
-                "Access-Control-Allow-Headers"
-        ));
-        corsConfig.setAllowCredentials(true);
-        corsConfig.setMaxAge(3600L);
+                                // Payment Processing (Stripe)
+                                .pathMatchers("/api/payments/**").permitAll()
+                                .pathMatchers("/api/cabinet/webhooks/stripe/**").permitAll()
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfig);
+                                // ============================================
+                                // PROTECTED ENDPOINTS - Require Authentication
+                                // ============================================
+                                .anyExchange().authenticated())
+                        .oauth2ResourceServer(oauth2 -> oauth2
+                                .jwt(jwt -> jwt.jwtDecoder(jwtDecoder())))
+                        .build();
+        }
 
-        return new CorsWebFilter(source);
-    }
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
 
-    // // Alternative: Simple CORS filter for preflight requests
-    // @Bean
-    // @Order(Ordered.HIGHEST_PRECEDENCE)
-    // public WebFilter corsFilter() {
-    //     return (ServerWebExchange ctx, WebFilterChain chain) -> {
-    //         var request = ctx.getRequest();
-    //         var response = ctx.getResponse();
+                // Allow specific origins
+                configuration.setAllowedOrigins(Arrays.asList(
+                        "http://localhost:4200",
+                        "http://localhost:3000",
+                        "http://localhost:8081"
+                ));
 
-    //         var headers = response.getHeaders();
-    //         headers.add("Access-Control-Allow-Origin", "http://localhost:4200");
-    //         headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-    //         headers.add("Access-Control-Max-Age", "3600");
-    //         headers.add("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
-    //         headers.add("Access-Control-Expose-Headers", "Access-Control-Allow-Origin, Access-Control-Allow-Credentials");
-    //         headers.add("Access-Control-Allow-Credentials", "true");
+                // Allow all HTTP methods
+                configuration.setAllowedMethods(Arrays.asList(
+                        "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
+                ));
 
-    //         if (request.getMethod() == HttpMethod.OPTIONS) {
-    //             response.setStatusCode(HttpStatus.OK);
-    //             return Mono.empty();
-    //         }
+                // Allow all headers
+                configuration.setAllowedHeaders(Arrays.asList("*"));
 
-    //         return chain.filter(ctx);
-    //     };
-    // }
+                // Expose headers that the frontend needs to read
+                configuration.setExposedHeaders(Arrays.asList(
+                        "Access-Control-Allow-Origin",
+                        "Access-Control-Allow-Credentials",
+                        "Authorization",
+                        "Content-Type"
+                ));
+
+                // Allow credentials (cookies, authorization headers)
+                configuration.setAllowCredentials(true);
+
+                // Cache preflight response for 1 hour
+                configuration.setMaxAge(3600L);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+
+                return source;
+        }
+
+        @Bean
+        public ReactiveJwtDecoder jwtDecoder() {
+                // Configure JWT decoder with your Keycloak server
+                return NimbusReactiveJwtDecoder
+                        .withJwkSetUri("http://localhost:9098/realms/cabinet-medical/protocol/openid-connect/certs")
+                        .build();
+        }
 }

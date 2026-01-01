@@ -5,6 +5,7 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { PaymentTableComponent, Payment } from '../../../shared/components/payment-table/payment-table.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { CabinetService, PaymentResponse } from '../../doctor/services/cabinet.service';
 
 @Component({
     selector: 'app-payments',
@@ -21,41 +22,34 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
     styleUrls: ['./payments.css']
 })
 export class PaymentsComponent implements OnInit {
-    payments: Payment[] = [
-        {
-            id: 'P-001',
-            clinicLogo: 'assets/clinic-1.png',
-            clinicName: 'St. Mary Medical Center',
-            creationDate: '2025-01-10',
-            paymentDelay: '5 Days',
-            pricingType: 'monthly',
-            status: 'active'
-        },
-        {
-            id: 'P-002',
-            clinicLogo: 'assets/clinic-2.png',
-            clinicName: 'Oakcrest Family Clinic',
-            creationDate: '2024-12-15',
-            paymentDelay: '0 Days',
-            pricingType: 'yearly',
-            status: 'active'
-        },
-        {
-            id: 'P-003',
-            clinicLogo: 'assets/clinic-3.png',
-            clinicName: 'Peak Vision Center',
-            creationDate: '2024-11-20',
-            paymentDelay: 'Overdue',
-            pricingType: 'monthly',
-            status: 'expired'
-        }
-    ];
+    payments: Payment[] = []; // Initialize as empty, data will be loaded
 
     activeFilter: 'all' | 'active' | 'expired' = 'all';
     searchTerm: string = '';
     isLogoutModalOpen = false;
 
-    ngOnInit(): void { }
+    constructor(private cabinetService: CabinetService) { }
+
+    ngOnInit(): void {
+        this.loadPayments();
+    }
+
+    loadPayments() {
+        this.cabinetService.getAllPayments().subscribe({
+            next: (data: PaymentResponse[]) => {
+                this.payments = data.map((p: PaymentResponse) => ({
+                    id: `P-${p.idPaiement}`,
+                    clinicLogo: p.cabinetLogo || 'assets/clinic-1.png',
+                    clinicName: p.cabinetNom || 'Unknown Clinic',
+                    creationDate: new Date(p.datePaiement).toLocaleDateString(),
+                    paymentDelay: 'On Time', // Logic to be refined if needed
+                    pricingType: 'Subscription', // Logic to derive from amount
+                    status: p.statut.toLowerCase() as 'active' | 'expired'
+                }));
+            },
+            error: (err: any) => console.error('Error fetching payments:', err)
+        });
+    }
 
     get filteredPayments(): Payment[] {
         let filtered = this.payments;

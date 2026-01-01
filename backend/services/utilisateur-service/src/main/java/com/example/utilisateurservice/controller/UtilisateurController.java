@@ -143,6 +143,23 @@ public class UtilisateurController {
         return ResponseEntity.ok(utilisateurService.updateUtilisateur(id, request));
     }
 
+    /**
+     * Changer le statut (Actif/Inactif) d'un utilisateur
+     * Accessible par: SUPER_ADMIN et ADMIN
+     */
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ResponseEntity<UtilisateurResponse> updateUserStatus(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Boolean> statusUpdate) {
+        log.info("Mise à jour du statut pour utilisateur ID: {}", id);
+        Boolean newStatus = statusUpdate.get("actif");
+        if (newStatus == null) {
+            throw new IllegalArgumentException("Le champ 'actif' est requis");
+        }
+        return ResponseEntity.ok(utilisateurService.updateUserStatus(id, newStatus));
+    }
+
     // ============================================================
     // ENDPOINT INTERNE / SYNCHRONISATION (CABINET)
     // ============================================================

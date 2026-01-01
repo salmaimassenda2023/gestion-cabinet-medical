@@ -43,7 +43,8 @@
       </ul>
 
       <div class="card-footer">
-        <button class="pricing-cta" (click)="navigateToOnboarding(plan.name.toLowerCase())">
+        <button class="cta-button" [class.btn-primary-gradient]="plan.popular" [class.btn-white]="!plan.popular"
+          (click)="navigateToOnboarding(plan.name.toLowerCase())">
           {{ plan.cta }}
         </button>
       </div>

@@ -25,6 +25,11 @@ public class CabinetController {
         return new ResponseEntity<>(cabinetService.createCabinet(dto), HttpStatus.CREATED);
     }
 
+    @GetMapping
+    public ResponseEntity<List<CabinetResponseDTO>> getAllCabinets() {
+        return ResponseEntity.ok(cabinetService.getAllCabinets());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CabinetResponseDTO> getCabinet(@PathVariable Long id) {
         return ResponseEntity.ok(cabinetService.getCabinet(id));
@@ -47,7 +52,8 @@ public class CabinetController {
     }
 
     @PostMapping("/{id}/services")
-    public ResponseEntity<ServiceConsultationDTO> addService(@PathVariable Long id, @RequestBody @Valid ServiceConsultationDTO dto) {
+    public ResponseEntity<ServiceConsultationDTO> addService(@PathVariable Long id,
+            @RequestBody @Valid ServiceConsultationDTO dto) {
         return new ResponseEntity<>(cabinetService.addService(id, dto), HttpStatus.CREATED);
     }
 

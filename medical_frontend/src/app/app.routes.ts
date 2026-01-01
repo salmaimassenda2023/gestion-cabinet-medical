@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/login/login';
 import { HomeComponent } from './features/landing/pages/home/home';
+import { UserTypeSectionComponent } from './features/landing/components/user-type-section/user-type-section';
 import { DoctorOnboardingComponent } from './features/landing/pages/doctor-onboarding/doctor-onboarding';
 import { AdminDashboardComponent } from './features/admin/admin-dashboard/admin-dashboard.component';
 import { DoctorDashboardComponent } from './features/doctor/doctor-dashboard.component';
@@ -22,6 +23,7 @@ import { SecretaryProfileComponent } from './features/secretary/profile/profile'
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'usertype', component: UserTypeSectionComponent },
   { path: 'onboarding', component: DoctorOnboardingComponent },
   { path: 'admin', component: AdminDashboardComponent },
   { path: 'admin/users', component: UsersComponent },
@@ -42,7 +44,7 @@ export const routes: Routes = [
       { path: 'orders', component: SecretaryOrdersComponent },
       { path: 'patients', component: SecretaryPatientsComponent },
       { path: 'payments', component: SecretaryPaymentsComponent },
-      { path: 'profile', component: SecretaryProfileComponent }
+      { path: 'profile', component: SecretaryProfileComponent },
     ]
   },
   { path: '**', redirectTo: '' }

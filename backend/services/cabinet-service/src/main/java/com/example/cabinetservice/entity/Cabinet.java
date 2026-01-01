@@ -38,6 +38,12 @@ public class Cabinet {
     @Column(columnDefinition = "TEXT")
     private String logo;
 
+    @Column(name = "max_patients_jour")
+    private Integer maxPatientsJour;
+
+    @Column(name = "duree_consultation")
+    private Integer dureeConsultation;
+
     // @Column(name = "medecin_id")
     private Long medecinId;
 

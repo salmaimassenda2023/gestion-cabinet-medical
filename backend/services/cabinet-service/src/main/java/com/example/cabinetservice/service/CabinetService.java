@@ -3,6 +3,7 @@ package com.example.cabinetservice.service;
 import com.example.cabinetservice.dto.CabinetCreateDTO;
 import com.example.cabinetservice.dto.CabinetResponseDTO;
 import com.example.cabinetservice.dto.CabinetUpdateDTO;
+import com.example.cabinetservice.dto.PaiementResponseDTO;
 import com.example.cabinetservice.dto.ServiceConsultationDTO;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,11 @@ public interface CabinetService {
 
     List<ServiceConsultationDTO> getServices(Long cabinetId);
 
-    ServiceConsultationDTO getServiceById(Long cabinetId,Long serviceId);
+    ServiceConsultationDTO getServiceById(Long cabinetId, Long serviceId);
+
+    List<CabinetResponseDTO> getAllCabinets();
+
+    List<PaiementResponseDTO> getAllPaiements();
 
     void handleSuccessfulPayment(Long abonnementId, Double amount, String stripePaymentId);
 }

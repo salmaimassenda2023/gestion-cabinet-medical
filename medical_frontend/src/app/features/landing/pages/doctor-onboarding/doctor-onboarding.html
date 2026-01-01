@@ -175,45 +175,79 @@
             <!-- Step 3: Services & Pricing -->
             <form [formGroup]="servicesForm" *ngIf="currentStep === 3" class="form-grid">
                 <h3 class="step-title">Services & Pricing</h3>
+                <p class="subtitle">Define your clinic's service offerings.</p>
 
                 <div class="input-group">
                     <label>General Consultation Price ($)</label>
-                    <input type="number" formControlName="generalPrice" placeholder="150">
+                    <div class="price-input-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" formControlName="generalPrice" placeholder="150" class="price-input">
+                    </div>
                 </div>
 
-                <div class="services-list" formArrayName="additionalServices">
-                    <label>Additional Services</label>
+                <div class="services-section">
+                    <label class="section-label">Additional Services</label>
 
-                    <div *ngFor="let service of additionalServices.controls; let i=index" [formGroupName]="i"
-                        class="service-row">
-                        <input type="text" formControlName="name" placeholder="Service Name">
-                        <input type="number" formControlName="price" placeholder="Price">
-                        <button type="button" class="remove-btn" (click)="removeService(i)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
+                    <div class="services-list" formArrayName="additionalServices">
+                        <div *ngFor="let service of additionalServices.controls; let i=index" [formGroupName]="i"
+                            class="service-card animate-fade-in">
+                            <div class="service-inputs">
+                                <input type="text" formControlName="name" placeholder="Service Name (e.g. ECG)"
+                                    class="service-name-input">
+                                <div class="price-input-wrapper small">
+                                    <span class="currency-symbol">$</span>
+                                    <input type="number" formControlName="price" placeholder="Price"
+                                        class="price-input">
+                                </div>
+                            </div>
+                            <input type="text" formControlName="description" placeholder="Short description (optional)"
+                                class="service-desc-input">
+
+                            <button type="button" class="remove-service-btn" (click)="removeService(i)"
+                                title="Remove Service">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <button type="button" class="add-btn btn-outline" (click)="addService()">+ Add Service</button>
+                    <button type="button" class="add-service-btn" (click)="addService()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Another Service
+                    </button>
                 </div>
             </form>
 
             <!-- Step 4: Payment -->
             <form [formGroup]="paymentForm" *ngIf="currentStep === 4" class="form-grid">
                 <h3 class="step-title">Payment Method</h3>
-                <p class="subtitle">Enter your card details for the {{ selectedPlan }} subscription.</p>
+                <p class="subtitle">Enter your card details for the {{ selectedPlan | titlecase }} subscription.</p>
+
+                <div class="payment-summary">
+                    <span class="summary-label">Total per month</span>
+                    <span class="summary-amount">{{ selectedPlan === 'monthly' ? '$29.99' : '$0.00' }}</span>
+                </div>
 
                 <div class="input-group">
                     <label>Name on Card</label>
                     <input type="text" formControlName="cardName" placeholder="JOHN DOE">
+                    <div *ngIf="paymentForm.get('cardName')?.invalid && paymentForm.get('cardName')?.touched"
+                        class="error-message">
+                        Name is required.
+                    </div>
                 </div>
 
                 <div class="input-group"
-                    style="padding: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;">
-                    <ngx-stripe-card [options]="cardOptions" [containerClass]="'stripe-card-container'">
+                    style="padding: 12px; background: #fff; border: 1px solid var(--border); border-radius: 0.75rem;">
+                    <ngx-stripe-card [options]="cardOptions" [elementsOptions]="elementsOptions"
+                        [containerClass]="'stripe-card-container'">
                     </ngx-stripe-card>
                 </div>
             </form>

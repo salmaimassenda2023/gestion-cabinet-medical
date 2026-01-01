@@ -35,6 +35,7 @@
     "lucide-angular": "^0.562.0",
     "ngx-stripe": "^21.8.0",
     "rxjs": "~7.8.0",
+    "stripe": "^20.1.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

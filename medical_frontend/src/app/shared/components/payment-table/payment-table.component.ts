@@ -7,7 +7,7 @@ export interface Payment {
     clinicName: string;
     creationDate: string;
     paymentDelay: string;
-    pricingType: 'monthly' | 'yearly';
+    pricingType: string;
     status: 'active' | 'expired';
 }
 
@@ -37,8 +37,10 @@ export class PaymentTableComponent {
         return status === 'active' ? 'Active' : 'Expired';
     }
 
-    getPricingTypeText(type: 'monthly' | 'yearly'): string {
-        return type === 'monthly' ? 'Monthly' : 'Yearly';
+    getPricingTypeText(type: string): string {
+        if (type === 'monthly') return 'Monthly';
+        if (type === 'yearly') return 'Yearly';
+        return type;
     }
 
     previousPage(): void {

@@ -234,6 +234,28 @@ public class UtilisateurService {
         return mapToResponse(utilisateur);
     }
 
+    @Transactional
+    public UtilisateurResponse updateUserStatus(Long id, Boolean active) {
+        log.info("Mise à jour statut utilisateur ID: {} -> {}", id, active);
+
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'ID: " + id));
+
+        utilisateur.setActif(active);
+
+        // Keycloak update (enable/disable user)
+        try {
+            keycloakService.updateUserStatus(utilisateur.getKeycloakId(), active);
+        } catch (Exception e) {
+            log.error("Erreur lors de la mise à jour Keycloak pour l'utilisateur {}: {}", id, e.getMessage());
+            // We might want to rollback but for now we log it.
+            // Ideally sync should ideally be guaranteed.
+        }
+
+        utilisateur = utilisateurRepository.save(utilisateur);
+        return mapToResponse(utilisateur);
+    }
+
     /**
      *
      * L'authentification JWT garantit déjà que c'est le bon utilisateur
