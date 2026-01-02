@@ -4,6 +4,9 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { UtilisateurService, UtilisateurResponse } from '../../auth/services/utilisateur.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-profile',
@@ -22,13 +25,18 @@ export class ProfileComponent implements OnInit {
     personalForm: FormGroup;
     passwordForm: FormGroup;
     isLogoutModalOpen = false;
+    currentUser?: UtilisateurResponse;
 
-    constructor(private fb: FormBuilder) {
+    constructor(
+        private fb: FormBuilder,
+        private utilisateurService: UtilisateurService,
+        private router: Router
+    ) {
         this.personalForm = this.fb.group({
-            firstName: ['Farah', Validators.required],
-            lastName: ['Admin', Validators.required],
-            email: ['farah@clinicflow.com', [Validators.required, Validators.email]],
-            phone: ['+212 600-000000', Validators.required]
+            firstName: ['', Validators.required],
+            lastName: ['', Validators.required],
+            email: [{ value: '', disabled: true }, [Validators.required, Validators.email]],
+            phone: ['', Validators.required]
         });
 
         this.passwordForm = this.fb.group({
@@ -38,7 +46,24 @@ export class ProfileComponent implements OnInit {
         }, { validator: this.passwordMatchValidator });
     }
 
-    ngOnInit(): void { }
+    ngOnInit(): void {
+        this.loadProfile();
+    }
+
+    loadProfile(): void {
+        this.utilisateurService.getCurrentUser().subscribe({
+            next: (user: UtilisateurResponse) => {
+                this.currentUser = user;
+                this.personalForm.patchValue({
+                    firstName: user.prenom,
+                    lastName: user.nom,
+                    email: user.login,
+                    phone: user.numTel
+                });
+            },
+            error: (err: HttpErrorResponse) => console.error('Error loading profile:', err)
+        });
+    }
 
     passwordMatchValidator(g: FormGroup) {
         return g.get('newPassword')?.value === g.get('confirmPassword')?.value
@@ -46,17 +71,36 @@ export class ProfileComponent implements OnInit {
     }
 
     onUpdatePersonal(): void {
-        if (this.personalForm.valid) {
-            console.log('Updating Personal Info:', this.personalForm.value);
-            alert('Personal information updated successfully!');
+        if (this.personalForm.valid && this.currentUser) {
+            const request = {
+                nom: this.personalForm.value.lastName,
+                prenom: this.personalForm.value.firstName,
+                numTel: this.personalForm.value.phone
+            };
+
+            this.utilisateurService.updateUtilisateur(this.currentUser.idUtilisateur, request).subscribe({
+                next: () => {
+                    alert('Personal information updated successfully!');
+                },
+                error: (err: HttpErrorResponse) => alert('Failed to update profile: ' + err.message)
+            });
         }
     }
 
     onUpdatePassword(): void {
-        if (this.passwordForm.valid) {
-            console.log('Updating Password:', this.passwordForm.value);
-            alert('Password updated successfully!');
-            this.passwordForm.reset();
+        if (this.passwordForm.valid && this.currentUser) {
+            const request = {
+                oldPassword: this.passwordForm.value.oldPassword,
+                newPassword: this.passwordForm.value.newPassword
+            };
+
+            this.utilisateurService.changePassword(this.currentUser.idUtilisateur, request).subscribe({
+                next: () => {
+                    alert('Password updated successfully!');
+                    this.passwordForm.reset();
+                },
+                error: (err: HttpErrorResponse) => alert('Failed to update password: ' + err.message)
+            });
         }
     }
 
@@ -65,7 +109,9 @@ export class ProfileComponent implements OnInit {
     }
 
     confirmLogout(): void {
-        console.log('Logging out...');
         this.isLogoutModalOpen = false;
+        localStorage.clear();
+        sessionStorage.clear();
+        this.router.navigate(['/login']);
     }
 }

@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UtilisateurService, UtilisateurResponse } from '../../auth/services/utilisateur.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'app-doctor-profile',
@@ -13,16 +15,20 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 export class DoctorProfileComponent implements OnInit {
     personalForm: FormGroup;
     passwordForm: FormGroup;
+    currentUser?: UtilisateurResponse;
 
-    constructor(private fb: FormBuilder) {
+    constructor(
+        private fb: FormBuilder,
+        private utilisateurService: UtilisateurService
+    ) {
         this.personalForm = this.fb.group({
-            firstName: ['Farah', Validators.required],
-            lastName: ['Doctor', Validators.required],
-            email: ['doctor.farah@example.com', [Validators.required, Validators.email]],
-            phone: ['+212 600-000000', Validators.required],
-            specialty: ['Cardiologist', Validators.required],
-            clinicName: ['Heart Center', Validators.required],
-            clinicAddress: ['123 Medical Center, Casablanca', Validators.required]
+            firstName: ['', Validators.required],
+            lastName: ['', Validators.required],
+            email: [{ value: '', disabled: true }, [Validators.required, Validators.email]],
+            phone: ['', Validators.required],
+            specialty: [{ value: 'N/A', disabled: true }],
+            clinicName: [{ value: 'N/A', disabled: true }],
+            clinicAddress: [{ value: 'N/A', disabled: true }]
         });
 
         this.passwordForm = this.fb.group({
@@ -32,7 +38,24 @@ export class DoctorProfileComponent implements OnInit {
         }, { validator: this.passwordMatchValidator });
     }
 
-    ngOnInit(): void { }
+    ngOnInit(): void {
+        this.loadProfile();
+    }
+
+    loadProfile(): void {
+        this.utilisateurService.getCurrentUser().subscribe({
+            next: (user: UtilisateurResponse) => {
+                this.currentUser = user;
+                this.personalForm.patchValue({
+                    firstName: user.prenom,
+                    lastName: user.nom,
+                    email: user.login,
+                    phone: user.numTel
+                });
+            },
+            error: (err: HttpErrorResponse) => console.error('Error loading profile:', err)
+        });
+    }
 
     passwordMatchValidator(g: FormGroup) {
         return g.get('newPassword')?.value === g.get('confirmPassword')?.value
@@ -40,17 +63,36 @@ export class DoctorProfileComponent implements OnInit {
     }
 
     onUpdatePersonal(): void {
-        if (this.personalForm.valid) {
-            console.log('Updating Doctor Info:', this.personalForm.value);
-            alert('Profile updated successfully!');
+        if (this.personalForm.valid && this.currentUser) {
+            const request = {
+                nom: this.personalForm.value.lastName,
+                prenom: this.personalForm.value.firstName,
+                numTel: this.personalForm.value.phone
+            };
+
+            this.utilisateurService.updateUtilisateur(this.currentUser.idUtilisateur, request).subscribe({
+                next: () => {
+                    alert('Profile updated successfully!');
+                },
+                error: (err: HttpErrorResponse) => alert('Failed to update profile: ' + err.message)
+            });
         }
     }
 
     onUpdatePassword(): void {
-        if (this.passwordForm.valid) {
-            console.log('Updating Password:', this.passwordForm.value);
-            alert('Password updated successfully!');
-            this.passwordForm.reset();
+        if (this.passwordForm.valid && this.currentUser) {
+            const request = {
+                oldPassword: this.passwordForm.value.oldPassword,
+                newPassword: this.passwordForm.value.newPassword
+            };
+
+            this.utilisateurService.changePassword(this.currentUser.idUtilisateur, request).subscribe({
+                next: () => {
+                    alert('Password updated successfully!');
+                    this.passwordForm.reset();
+                },
+                error: (err: HttpErrorResponse) => alert('Failed to update password: ' + err.message)
+            });
         }
     }
 }

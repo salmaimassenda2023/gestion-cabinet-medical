@@ -20,10 +20,15 @@ export class PatientFormComponent implements OnInit {
     constructor(private fb: FormBuilder) {
         this.patientForm = this.fb.group({
             cin: ['', Validators.required],
-            name: ['', Validators.required],
-            age: ['', [Validators.required, Validators.min(0)]],
-            mutuelleType: ['', Validators.required],
-            gender: ['Female', Validators.required]
+            nom: ['', Validators.required],
+            prenom: ['', Validators.required],
+            dateNaissance: ['', Validators.required],
+            telephone: ['', [Validators.pattern(/^\+?[0-9]{10,20}$/)]],
+            email: ['', [Validators.email]],
+            adresse: [''],
+            typeMutuelle: [''],
+            numeroMutuelle: [''],
+            sexe: ['F', Validators.required]
         });
     }
 

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PatientFormComponent } from './patient-form/patient-form';
 import { Patient } from '../../../core/models/patient.model';
+import { PatientService } from '../../../core/services/patient.service';
+import { UtilisateurService } from '../../auth/services/utilisateur.service';
 
 @Component({
     selector: 'app-secretary-patients',
@@ -12,18 +14,54 @@ import { Patient } from '../../../core/models/patient.model';
     styleUrls: ['./patients.css']
 })
 export class SecretaryPatientsComponent implements OnInit {
-    patients: Patient[] = [
-        { id: '1', cin: 'AB123456', name: 'Peter Mullin', age: 45, mutuelleType: 'CNAM', gender: 'Male' },
-        { id: '2', cin: 'CD789012', name: 'Sandra Bay', age: 32, mutuelleType: 'CIMR', gender: 'Female' },
-        { id: '3', cin: 'EF345678', name: 'Andrew Kim', age: 28, mutuelleType: 'Private', gender: 'Male' }
-    ];
-
+    patients: Patient[] = [];
     isAddModalOpen = false;
     isEditModalOpen = false;
     isDeleteModalOpen = false;
     selectedPatient?: Patient;
+    idCabinet?: number;
 
-    ngOnInit() { }
+    constructor(
+        private patientService: PatientService,
+        private utilisateurService: UtilisateurService
+    ) { }
+
+    ngOnInit() {
+        this.loadCurrentUserAndPatients();
+    }
+
+    loadCurrentUserAndPatients() {
+        this.utilisateurService.getCurrentUser().subscribe({
+            next: (user) => {
+                this.idCabinet = user.idCabinet;
+                if (this.idCabinet) {
+                    this.loadPatients();
+                }
+            },
+            error: (err) => console.error('Error fetching current user:', err)
+        });
+    }
+
+    loadPatients() {
+        if (this.idCabinet) {
+            this.patientService.getPatientsByCabinet(this.idCabinet).subscribe({
+                next: (patients) => this.patients = patients,
+                error: (err) => console.error('Error fetching patients:', err)
+            });
+        }
+    }
+
+    calculateAge(dateNaissance: string): number {
+        if (!dateNaissance) return 0;
+        const birthDate = new Date(dateNaissance);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    }
 
     openAddModal() {
         this.selectedPatient = undefined;
@@ -41,26 +79,43 @@ export class SecretaryPatientsComponent implements OnInit {
     }
 
     onSavePatient(patientData: any) {
-        if (this.selectedPatient) {
-            const index = this.patients.findIndex(p => p.id === this.selectedPatient?.id);
-            this.patients[index] = { ...this.selectedPatient, ...patientData };
-            this.isEditModalOpen = false;
+        if (this.selectedPatient && this.selectedPatient.id) {
+            // Update
+            const updatedPatient: Patient = { ...this.selectedPatient, ...patientData };
+            this.patientService.updatePatient(this.selectedPatient.id, updatedPatient).subscribe({
+                next: () => {
+                    this.loadPatients();
+                    this.isEditModalOpen = false;
+                    this.selectedPatient = undefined;
+                },
+                error: (err) => console.error('Error updating patient:', err)
+            });
         } else {
+            // Create
             const newPatient: Patient = {
-                id: (this.patients.length + 1).toString(),
-                ...patientData
+                ...patientData,
+                idCabinet: this.idCabinet
             };
-            this.patients = [...this.patients, newPatient];
-            this.isAddModalOpen = false;
+            this.patientService.createPatient(newPatient).subscribe({
+                next: () => {
+                    this.loadPatients();
+                    this.isAddModalOpen = false;
+                },
+                error: (err) => console.error('Error creating patient:', err)
+            });
         }
-        this.selectedPatient = undefined;
     }
 
     confirmDelete() {
-        if (this.selectedPatient) {
-            this.patients = this.patients.filter(p => p.id !== this.selectedPatient?.id);
-            this.isDeleteModalOpen = false;
-            this.selectedPatient = undefined;
+        if (this.selectedPatient && this.selectedPatient.id) {
+            this.patientService.deletePatient(this.selectedPatient.id).subscribe({
+                next: () => {
+                    this.loadPatients();
+                    this.isDeleteModalOpen = false;
+                    this.selectedPatient = undefined;
+                },
+                error: (err) => console.error('Error deleting patient:', err)
+            });
         }
     }
 }

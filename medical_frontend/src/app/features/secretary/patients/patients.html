@@ -28,15 +28,15 @@
                     <td>{{ p.cin }}</td>
                     <td>
                         <div class="patient-name-cell">
-                            <div class="avatar">{{ p.name.charAt(0) }}</div>
-                            {{ p.name }}
+                            <div class="avatar">{{ p.nom.charAt(0) }}</div>
+                            {{ p.prenom }} {{ p.nom }}
                         </div>
                     </td>
-                    <td>{{ p.age }}</td>
-                    <td><span class="badge mutuelle">{{ p.mutuelleType }}</span></td>
+                    <td>{{ calculateAge(p.dateNaissance) }}</td>
+                    <td><span class="badge mutuelle">{{ p.typeMutuelle || 'None' }}</span></td>
                     <td>
-                        <span class="gender-tag" [class]="p.gender.toLowerCase()">
-                            {{ p.gender }}
+                        <span class="gender-tag" [class]="p.sexe === 'M' ? 'male' : 'female'">
+                            {{ p.sexe === 'M' ? 'Male' : 'Female' }}
                         </span>
                     </td>
                     <td>
@@ -66,7 +66,8 @@
 
     <app-modal [isOpen]="isDeleteModalOpen" title="Delete Patient" confirmText="Delete" [isDestructive]="true"
         (close)="isDeleteModalOpen = false" (confirm)="confirmDelete()">
-        <p>Are you sure you want to delete patient <strong>{{ selectedPatient?.name }}</strong>? This action cannot be
+        <p>Are you sure you want to delete patient <strong>{{ selectedPatient?.prenom }} {{ selectedPatient?.nom
+                }}</strong>? This action cannot be
             undone.</p>
     </app-modal>
 </div>

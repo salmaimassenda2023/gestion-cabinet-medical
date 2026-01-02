@@ -1,8 +1,16 @@
 export interface Patient {
-    id: string;
+    id?: number;
     cin: string;
-    name: string;
-    age: number;
-    mutuelleType: string;
-    gender: 'Male' | 'Female';
+    nom: string;
+    prenom: string;
+    dateNaissance: string; // ISO format
+    sexe: 'M' | 'F';
+    telephone?: string;
+    email?: string;
+    adresse?: string;
+    typeMutuelle?: string;
+    numeroMutuelle?: string;
+    idCabinet?: number;
+    actif?: boolean;
+    createdAt?: string;
 }

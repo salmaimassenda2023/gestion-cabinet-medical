@@ -2,16 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { AppointmentFormComponent } from './appointment-form/appointment-form.component';
-
-interface Appointment {
-    id: number;
-    patientName: string;
-    time: string;
-    date?: string;
-    type: string;
-    status: 'scheduled' | 'pending' | 'completed';
-    note?: string;
-}
+import { RendezvousService } from '../../../core/services/rendezvous.service';
+import { RendezVous, StatutRendezVous, MotifRendezVous } from '../../../core/models/rendezvous.model';
+import { UtilisateurService } from '../../auth/services/utilisateur.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
     selector: 'app-secretary-calendar',
@@ -26,31 +21,77 @@ export class SecretaryCalendarComponent implements OnInit {
     weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     isModalOpen = false;
     isDeleteModalOpen = false;
-    selectedAppointment?: Appointment;
+    selectedAppointment?: RendezVous;
 
     activeTypeFilter: string = 'all';
     activeStatusFilter: string = 'all';
 
-    appointments: Appointment[] = Array.from({ length: 30 }, (_, i) => ({
-        id: i + 1,
-        patientName: [
-            'Peter Mullin', 'Sandra Bay', 'Andrew Kim', 'Alfred Murray', 'Sandra Bay',
-            'Tom Young', 'Bob Fisher', 'Andrew Kim', 'Peter Mullin', 'Alfred Murray'
-        ][i % 10] + (i > 9 ? ` ${Math.floor(i / 10) + 1}` : ''),
-        time: `${Math.floor(8 + (i * 15) / 60).toString().padStart(2, '0')}:${((i * 15) % 60).toString().padStart(2, '0')}`,
-        type: ['Consultation', 'Follow-up', 'Surgery', 'Checkup'][i % 4],
-        status: ['scheduled', 'pending', 'completed'][i % 3] as any,
-        note: i % 3 === 0 ? 'Regular checkup needed.' : ''
-    }));
+    appointments: RendezVous[] = [];
+    idCabinet?: number;
+    medecins: any[] = [];
+    selectedMedecinId?: number;
+
+    constructor(
+        private rendezvousService: RendezvousService,
+        private utilisateurService: UtilisateurService,
+        private patientService: PatientService
+    ) { }
 
     ngOnInit() {
         this.generateCalendar();
+        this.loadInitialData();
     }
 
-    get filteredAppointments(): Appointment[] {
+    loadInitialData() {
+        this.utilisateurService.getCurrentUser().subscribe({
+            next: (user) => {
+                this.idCabinet = user.idCabinet;
+                if (this.idCabinet) {
+                    this.loadMedecinsAndAppointments();
+                }
+            },
+            error: (err) => console.error('Error fetching current user:', err)
+        });
+    }
+
+    loadMedecinsAndAppointments() {
+        if (!this.idCabinet) return;
+
+        this.utilisateurService.getUtilisateursByCabinet(this.idCabinet).subscribe({
+            next: (users) => {
+                this.medecins = users.filter(u => u.role === 'MEDECIN');
+                if (this.medecins.length > 0) {
+                    this.selectedMedecinId = this.medecins[0].idUtilisateur;
+                    this.loadAppointments();
+                }
+            },
+            error: (err) => console.error('Error fetching medecins:', err)
+        });
+    }
+
+    loadAppointments() {
+        if (!this.selectedMedecinId) return;
+
+        const dateStr = this.currentDate.toISOString().split('T')[0];
+
+        forkJoin({
+            rendezvous: this.rendezvousService.getRendezVousByMedecinAndDate(this.selectedMedecinId, dateStr),
+            patients: this.patientService.getPatientsByCabinet(this.idCabinet!)
+        }).subscribe({
+            next: ({ rendezvous, patients }) => {
+                this.appointments = rendezvous.map(rdv => ({
+                    ...rdv,
+                    patientName: patients.find(p => p.id === rdv.idPatient)?.nom + ' ' + patients.find(p => p.id === rdv.idPatient)?.prenom
+                }));
+            },
+            error: (err) => console.error('Error fetching appointments:', err)
+        });
+    }
+
+    get filteredAppointments(): RendezVous[] {
         return this.appointments.filter(appt => {
-            const typeMatch = this.activeTypeFilter === 'all' || appt.type === this.activeTypeFilter;
-            const statusMatch = this.activeStatusFilter === 'all' || appt.status === this.activeStatusFilter;
+            const typeMatch = this.activeTypeFilter === 'all' || appt.motif === this.activeTypeFilter;
+            const statusMatch = this.activeStatusFilter === 'all' || appt.statut === this.activeStatusFilter;
             return typeMatch && statusMatch;
         });
     }
@@ -69,11 +110,13 @@ export class SecretaryCalendarComponent implements OnInit {
     nextMonth() {
         this.currentDate = new Date(this.currentDate.setMonth(this.currentDate.getMonth() + 1));
         this.generateCalendar();
+        this.loadAppointments();
     }
 
     previousMonth() {
         this.currentDate = new Date(this.currentDate.setMonth(this.currentDate.getMonth() - 1));
         this.generateCalendar();
+        this.loadAppointments();
     }
 
     openAddModal() {
@@ -81,7 +124,7 @@ export class SecretaryCalendarComponent implements OnInit {
         this.isModalOpen = true;
     }
 
-    editAppointment(appt: Appointment) {
+    editAppointment(appt: RendezVous) {
         this.selectedAppointment = appt;
         this.isModalOpen = true;
     }
@@ -92,32 +135,37 @@ export class SecretaryCalendarComponent implements OnInit {
     }
 
     onSaveAppointment(data: any) {
-        if (this.selectedAppointment) {
-            const index = this.appointments.findIndex(a => a.id === this.selectedAppointment?.id);
-            if (index > -1) {
-                this.appointments[index] = {
-                    ...this.selectedAppointment,
-                    patientName: data.patientName,
-                    time: data.hour,
-                    date: data.date,
-                    type: data.type,
-                    note: data.note
-                };
-                this.appointments = [...this.appointments];
-            }
-        } else {
-            const newAppt: Appointment = {
-                id: this.appointments.length > 0 ? Math.max(...this.appointments.map(a => a.id)) + 1 : 1,
-                patientName: data.patientName,
-                time: data.hour,
-                date: data.date,
-                type: data.type,
-                status: 'scheduled',
-                note: data.note
+        if (this.selectedAppointment && this.selectedAppointment.id) {
+            // Update
+            const updateDto = {
+                dateRdv: data.date,
+                heureRdv: data.hour.length === 5 ? data.hour + ':00' : data.hour,
+                motif: data.type as MotifRendezVous
             };
-            this.appointments = [newAppt, ...this.appointments];
+            this.rendezvousService.updateRendezVous(this.selectedAppointment.id, updateDto).subscribe({
+                next: () => {
+                    this.loadAppointments();
+                    this.closeAddModal();
+                },
+                error: (err) => console.error('Error updating appointment:', err)
+            });
+        } else {
+            // Create
+            const createDto = {
+                idPatient: +data.patientId,
+                idMedecin: this.selectedMedecinId!,
+                dateRdv: data.date,
+                heureRdv: data.hour.length === 5 ? data.hour + ':00' : data.hour,
+                motif: data.type as MotifRendezVous
+            };
+            this.rendezvousService.createRendezVous(createDto).subscribe({
+                next: () => {
+                    this.loadAppointments();
+                    this.closeAddModal();
+                },
+                error: (err) => console.error('Error creating appointment:', err)
+            });
         }
-        this.closeAddModal();
     }
 
     onDeleteAppointment() {
@@ -126,10 +174,15 @@ export class SecretaryCalendarComponent implements OnInit {
     }
 
     confirmDelete() {
-        if (this.selectedAppointment) {
-            this.appointments = this.appointments.filter(a => a.id !== this.selectedAppointment?.id);
-            this.isDeleteModalOpen = false;
-            this.selectedAppointment = undefined;
+        if (this.selectedAppointment && this.selectedAppointment.id) {
+            this.rendezvousService.deleteRendezVous(this.selectedAppointment.id).subscribe({
+                next: () => {
+                    this.loadAppointments();
+                    this.isDeleteModalOpen = false;
+                    this.selectedAppointment = undefined;
+                },
+                error: (err) => console.error('Error deleting appointment:', err)
+            });
         }
     }
 
@@ -139,5 +192,10 @@ export class SecretaryCalendarComponent implements OnInit {
 
     setStatusFilter(status: string) {
         this.activeStatusFilter = status;
+    }
+
+    onMedecinChange(event: any) {
+        this.selectedMedecinId = +event.target.value;
+        this.loadAppointments();
     }
 }

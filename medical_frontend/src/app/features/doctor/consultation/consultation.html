@@ -13,7 +13,7 @@
             </svg>
             Consultation
         </div>
-        <button class="btn-done" (click)="onDone()">DONE</button>
+        <button class="btn-done" (click)="onDone()" [disabled]="!nextPatientRendezVous">DONE</button>
     </div>
 
     <div class="consultation-layout">
@@ -21,12 +21,16 @@
         <div class="info-side">
             <section class="info-section">
                 <h2>Information</h2>
-                <div class="info-card">
-                    <p class="patient-main">{{ patientInfo.name }} . {{ patientInfo.gender }} . {{ patientInfo.age }} .
-                        {{ patientInfo.bloodType }}</p>
+                <div class="info-card" *ngIf="nextPatientRendezVous">
+                    <p class="patient-main">{{ patientInfo.name }} . {{ patientInfo.gender }} . {{ patientInfo.age }}
+                        years</p>
+                    <p><span class="label">Blood Type:</span> {{ patientInfo.bloodType }}</p>
                     <p><span class="label">Allergy:</span> {{ patientInfo.allergy }}</p>
                     <p><span class="label">Current treatment:</span> {{ patientInfo.currentTreatment }}</p>
                     <p><span class="label">Lifestyle:</span> {{ patientInfo.lifestyle }}</p>
+                </div>
+                <div class="info-card no-patient" *ngIf="!nextPatientRendezVous">
+                    <p>No patient in consultation.</p>
                 </div>
             </section>
 
@@ -34,9 +38,8 @@
                 <h2>Medical Record</h2>
                 <div class="record-card">
                     <div class="history-block">
-                        <span class="created-date">Created 08/03/2014</span>
                         <h3>History</h3>
-                        <p><span class="label">Medical:</span> Asthma (2018)</p>
+                        <p><span class="label">Medical:</span> Asthma (Known)</p>
                         <p><span class="label">Surgical:</span> None</p>
                     </div>
 
@@ -44,7 +47,7 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>type</th>
+                                <th>Type</th>
                                 <th>Diagnostic</th>
                             </tr>
                         </thead>
@@ -54,12 +57,15 @@
                                 <td><span class="type-tag">{{ item.type }}</span></td>
                                 <td><span class="diag-tag">{{ item.diagnostic }}</span></td>
                             </tr>
+                            <tr *ngIf="medicalHistory.length === 0">
+                                <td colspan="3" class="no-data">No previous history.</td>
+                            </tr>
                         </tbody>
                     </table>
 
                     <div class="documents-block">
                         <h3>Documents</h3>
-                        <div class="doc-tag">x-ray.png</div>
+                        <div class="doc-tag">none</div>
                     </div>
                 </div>
             </section>
@@ -76,22 +82,22 @@
                 <h3>Clinical Examination</h3>
                 <div class="vital-signs">
                     <div class="input-group">
-                        <label>Temperature</label>
-                        <input type="text" formControlName="temperature">
+                        <label>Temperature (°C)</label>
+                        <input type="text" formControlName="temperature" placeholder="37.0">
                     </div>
                     <div class="input-group">
-                        <label>Blood Pressure</label>
-                        <input type="text" formControlName="bloodPressure">
+                        <label>Blood Pressure (mmHg)</label>
+                        <input type="text" formControlName="bloodPressure" placeholder="120/80">
                     </div>
                     <div class="input-group">
-                        <label>Heart Rate</label>
-                        <input type="text" formControlName="heartRate">
+                        <label>Heart Rate (bpm)</label>
+                        <input type="text" formControlName="heartRate" placeholder="75">
                     </div>
                 </div>
 
                 <div class="input-group full">
                     <label>Observation</label>
-                    <textarea formControlName="observation"></textarea>
+                    <textarea formControlName="observation" placeholder="Physical signs, lung sounds, etc."></textarea>
                 </div>
 
                 <hr>
@@ -123,40 +129,50 @@
 
                 <hr>
 
-                <h3>Treatment Prescribed <button class="btn-add">+</button></h3>
-                <div class="treatment-table">
+                <h3>Treatment Prescribed <button class="btn-add" (click)="addTreatment()">+</button></h3>
+                <div class="treatment-table" formArrayName="prescription">
                     <div class="treatment-header">
                         <span>Medicament</span>
-                        <span>Dosage</span>
+                        <span>Dosage/Posology</span>
                         <span>Duration</span>
+                        <span></span>
                     </div>
-                    <div class="treatment-row">
-                        <input type="text" placeholder="...">
-                        <input type="text" placeholder="...">
-                        <input type="text" placeholder="...">
+                    <div class="treatment-row" *ngFor="let t of prescription.controls; let i = index"
+                        [formGroupName]="i">
+                        <div class="autocomplete-container">
+                            <input type="text" formControlName="nomMedicament" placeholder="Search medicament...">
+                            <div class="autocomplete-dropdown" *ngIf="showAutocomplete[i]">
+                                <div class="autocomplete-item" *ngFor="let med of medicationsAutocomplete[i]"
+                                    (click)="selectMedicament(i, med)">
+                                    <span class="med-name">{{ med.nom }}</span>
+                                    <span class="med-info">{{ med.forme }} - {{ med.dosage }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="text" formControlName="dosage" placeholder="1 tab 3x/day">
+                        <input type="text" formControlName="duree" placeholder="7 days">
+                        <button class="btn-remove" (click)="removeTreatment(i)">&times;</button>
+                    </div>
+                    <div class="no-treatment" *ngIf="prescription.length === 0">
+                        No medication prescribed yet.
                     </div>
                 </div>
 
                 <div class="input-group full">
-                    <label>Diagnostic</label>
-                    <textarea formControlName="diagnostic"></textarea>
-                </div>
-
-                <div class="input-group full">
-                    <label>Observation</label>
-                    <textarea formControlName="observation"></textarea>
+                    <label>Final Diagnostic</label>
+                    <textarea formControlName="diagnostic" placeholder="Enter diagnostic here..."></textarea>
                 </div>
 
                 <div class="follow-up">
                     <label class="checkbox-container">
-                        <input type="checkbox"> Needs a follow-up
+                        <input type="checkbox" formControlName="needsFollowUp"> Needs a follow-up
                     </label>
-                    <div class="follow-up-inputs">
+                    <div class="follow-up-inputs" *ngIf="consultationForm.get('needsFollowUp')?.value">
                         <select formControlName="followUpType">
                             <option>Months</option>
                             <option>Weeks</option>
                         </select>
-                        <input type="text" formControlName="followUpValue">
+                        <input type="text" formControlName="followUpValue" placeholder="e.g. 1">
                     </div>
                 </div>
             </div>

@@ -1,7 +1,10 @@
 <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="appointment-form">
     <div class="form-group">
-        <label for="patientName">Patient Name</label>
-        <input type="text" id="patientName" formControlName="patientName" placeholder="Enter patient name">
+        <label for="patientId">Patient</label>
+        <select id="patientId" formControlName="patientId">
+            <option value="" disabled>Select a patient</option>
+            <option *ngFor="let p of patients" [value]="p.id">{{ p.prenom }} {{ p.nom }} ({{ p.cin }})</option>
+        </select>
     </div>
 
     <div class="form-row">
@@ -18,8 +21,10 @@
     <div class="form-group">
         <label for="type">Type</label>
         <select id="type" formControlName="type">
-            <option value="Consultation">Consultation</option>
-            <option value="Follow-up">Follow-up</option>
+            <option value="CONSULTATION">Consultation</option>
+            <option value="CONTROLE">Contrôle</option>
+            <option value="URGENCE">Urgence</option>
+            <option value="AUTRE">Autre</option>
         </select>
     </div>
 

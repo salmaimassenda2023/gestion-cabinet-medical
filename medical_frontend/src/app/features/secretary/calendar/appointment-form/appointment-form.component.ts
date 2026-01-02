@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PatientService } from '../../../../core/services/patient.service';
+import { Patient } from '../../../../core/models/patient.model';
 
 @Component({
     selector: 'app-appointment-form',
@@ -11,30 +13,48 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 })
 export class AppointmentFormComponent implements OnInit {
     @Input() appointment: any;
+    @Input() idCabinet?: number;
     @Output() save = new EventEmitter<any>();
     @Output() delete = new EventEmitter<void>();
     @Output() cancel = new EventEmitter<void>();
 
     appointmentForm: FormGroup;
+    patients: Patient[] = [];
 
-    constructor(private fb: FormBuilder) {
+    constructor(
+        private fb: FormBuilder,
+        private patientService: PatientService
+    ) {
         this.appointmentForm = this.fb.group({
-            patientName: ['', Validators.required],
+            patientId: ['', Validators.required],
             date: ['', Validators.required],
             hour: ['', Validators.required],
-            type: ['Consultation', Validators.required],
+            type: ['CONSULTATION', Validators.required],
             note: ['']
         });
     }
 
     ngOnInit() {
+        if (this.idCabinet) {
+            this.loadPatients();
+        }
+
         if (this.appointment) {
             this.appointmentForm.patchValue({
-                patientName: this.appointment.patientName,
-                date: this.appointment.date || '',
-                hour: this.appointment.time,
-                type: this.appointment.type,
-                note: this.appointment.note || ''
+                patientId: this.appointment.idPatient,
+                date: this.appointment.dateRdv || '',
+                hour: this.appointment.heureRdv ? this.appointment.heureRdv.substring(0, 5) : '',
+                type: this.appointment.motif,
+                note: this.appointment.notes || ''
+            });
+        }
+    }
+
+    loadPatients() {
+        if (this.idCabinet) {
+            this.patientService.getPatientsByCabinet(this.idCabinet).subscribe({
+                next: (patients) => this.patients = patients,
+                error: (err) => console.error('Error fetching patients:', err)
             });
         }
     }

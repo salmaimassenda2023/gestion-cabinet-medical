@@ -17,26 +17,27 @@ export class PricingSectionComponent {
   }
 
   plans = [
+    
     {
-      name: "Manual",
-      price: "Free",
-      period: "/forever",
-      description: "Perfect for testing or small practices",
+      name: "Monthly",
+      price: "350 DH",
+      period: "/month",
+      description: "Perfect for small practices",
       features: [
         "Up to 50 appointments/month",
         "Basic patient management",
         "Standard support",
         "Manual payment handling"
       ],
+      originalPrice: "600 DH",
       popular: false,
       cta: "Start",
     },
     {
-      name: "Monthly",
-      price: "$29.99",
-      period: "/month",
+      name: "Manual",
+      price: "3000 DH",
+      period: "/an",
       description: "Full access for growing clinics",
-      originalPrice: "$49.99",
       features: [
         "Unlimited appointments",
         "Advanced patient management",

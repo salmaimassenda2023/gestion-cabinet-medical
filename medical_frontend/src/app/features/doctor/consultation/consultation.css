@@ -66,6 +66,18 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(59, 154, 169, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-done:hover:not(:disabled) {
+    background: #2d7a87;
+    transform: translateY(-2px);
+}
+
+.btn-done:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
 }
 
 .consultation-layout {
@@ -111,14 +123,6 @@ h3 {
 }
 
 /* Record Section */
-.created-date {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #1e293b;
-    display: block;
-    margin-bottom: 0.25rem;
-}
-
 .history-table {
     width: 100%;
     margin-top: 1rem;
@@ -178,10 +182,6 @@ h3 {
 }
 
 /* Form Side */
-.form-card h3 {
-    margin-bottom: 1.5rem;
-}
-
 .vital-signs {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -202,10 +202,18 @@ h3 {
 .input-group select {
     width: 100%;
     background: #f1f5f9;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 12px;
     padding: 0.75rem;
     font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    background: white;
+    border-color: #3b9aa9;
+    outline: none;
 }
 
 .input-group textarea {
@@ -234,61 +242,147 @@ hr {
     cursor: pointer;
 }
 
-.checkbox-container input {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-}
-
 .btn-add {
     background: none;
     border: none;
-    color: #1e293b;
-    font-size: 1.2rem;
+    color: #3b9aa9;
+    font-size: 1.5rem;
     font-weight: 700;
     cursor: pointer;
+    vertical-align: middle;
 }
 
 .treatment-table {
-    background: #f1f5f9;
     border-radius: 12px;
-    padding: 1rem;
     margin-bottom: 1.5rem;
 }
 
 .treatment-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    display: flex;
+    gap: 10px;
     font-size: 0.75rem;
     color: #94a3b8;
     margin-bottom: 0.5rem;
     padding: 0 0.75rem;
 }
 
+.treatment-header span {
+    flex: 1;
+}
+
+.treatment-header span:first-child {
+    flex: 2;
+}
+
 .treatment-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 0.5rem;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start;
 }
 
 .treatment-row input {
-    background: white;
-    border: none;
+    flex: 1;
+    background: #f1f5f9;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 0.5rem 0.75rem;
 }
 
+.btn-remove {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
 
+.no-treatment,
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+    font-style: italic;
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.no-patient {
+    padding: 30px;
+    text-align: center;
+    background: #f8fafc;
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    color: #64748b;
+}
 
 .follow-up {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 15px;
     margin-top: 1rem;
 }
 
 .follow-up-inputs {
     display: flex;
-    gap: 0.5rem;
-    width: 200px;
+    gap: 1rem;
+}
+
+.follow-up-inputs select,
+.follow-up-inputs input {
+    flex: 1;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+/* Autocomplete Styles */
+.autocomplete-container {
+    position: relative;
+    flex: 2;
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+
+.autocomplete-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.autocomplete-item:hover {
+    background: #f1f5f9;
+}
+
+.autocomplete-item .med-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.autocomplete-item .med-info {
+    font-size: 0.8rem;
+    color: #64748b;
 }

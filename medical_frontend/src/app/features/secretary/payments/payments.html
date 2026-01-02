@@ -15,7 +15,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Patient Name</th>
-                    <th>Services</th>
+                    <th>Date</th>
                     <th>Total Price</th>
                     <th>Status</th>
                     <th>Action</th>
@@ -23,18 +23,13 @@
             </thead>
             <tbody>
                 <tr *ngFor="let p of payments">
-                    <td>#{{ p.id }}</td>
+                    <td>#{{ p.idFacture }}</td>
                     <td class="patient-name">{{ p.patientName }}</td>
+                    <td>{{ p.dateFacture | date:'dd/MM/yyyy' }}</td>
+                    <td class="price">{{ p.montantTotal }} MAD</td>
                     <td>
-                        <div class="services-list">
-                            <span class="service-tag">Consultation</span>
-                            <span class="service-tag" *ngFor="let s of p.services">{{ s.name }}</span>
-                        </div>
-                    </td>
-                    <td class="price">{{ p.totalPrice }} MAD</td>
-                    <td>
-                        <span class="status-tag" [class]="p.status">
-                            {{ p.status.toUpperCase() }}
+                        <span class="status-tag" [class]="p.statut">
+                            {{ p.statut }}
                         </span>
                     </td>
                     <td>
@@ -43,6 +38,9 @@
                             <i class="fas fa-file-invoice-dollar"></i>
                         </button>
                     </td>
+                </tr>
+                <tr *ngIf="payments.length === 0">
+                    <td colspan="6" class="no-data">No transactions found.</td>
                 </tr>
             </tbody>
         </table>
@@ -53,18 +51,33 @@
         (close)="isPayModalOpen = false">
         <div class="payment-setup">
             <div class="form-group">
-                <label>Patient Name</label>
-                <input type="text" [(ngModel)]="selectedPatientName" placeholder="Enter patient name">
+                <label>Select Patient</label>
+                <select [(ngModel)]="selectedPatientId" (change)="onPatientChange()">
+                    <option [ngValue]="undefined">Select a patient</option>
+                    <option *ngFor="let p of patients" [value]="p.id">{{ p.nom }} {{ p.prenom }}</option>
+                </select>
             </div>
 
-            <div class="services-selection">
+            <div class="form-group" *ngIf="selectedPatientId">
+                <label>Select Consultation</label>
+                <select [(ngModel)]="selectedConsultationId">
+                    <option [ngValue]="undefined">Select a consultation</option>
+                    <ng-container *ngFor="let c of consultations">
+                        <option *ngIf="c.idPatient == selectedPatientId" [value]="c.idConsultation">
+                            Consultation on {{ c.dateConsultation | date:'dd/MM/yyyy HH:mm' }}
+                        </option>
+                    </ng-container>
+                </select>
+            </div>
+
+            <div class="services-selection" *ngIf="selectedConsultationId">
                 <label>Select Additional Services</label>
                 <div class="services-grid">
                     <div *ngFor="let service of availableServices" class="service-item"
                         [class.selected]="isServiceSelected(service)" (click)="toggleService(service)">
                         <div class="service-info">
-                            <span class="name">{{ service.name }}</span>
-                            <span class="price">{{ service.price }} MAD</span>
+                            <span class="name">{{ service.nomService }}</span>
+                            <span class="price">{{ service.prix }} MAD</span>
                         </div>
                         <div class="checkbox">
                             <i class="fas fa-check" *ngIf="isServiceSelected(service)"></i>
@@ -73,7 +86,7 @@
                 </div>
             </div>
 
-            <div class="payment-summary">
+            <div class="payment-summary" *ngIf="selectedConsultationId">
                 <div class="summary-line">
                     <span>Base Consultation</span>
                     <span>{{ consultationBasePrice }} MAD</span>
@@ -86,7 +99,8 @@
 
             <div class="form-actions">
                 <button type="button" class="btn-secondary" (click)="isPayModalOpen = false">Cancel</button>
-                <button type="button" class="btn-primary" (click)="processPayment()" [disabled]="!selectedPatientName">
+                <button type="button" class="btn-primary" (click)="processPayment()"
+                    [disabled]="!selectedConsultationId">
                     Confirm & Generate Bill
                 </button>
             </div>
@@ -100,11 +114,11 @@
             <div class="bill-header">
                 <div class="clinic-info">
                     <h2>MEDICAL CENTER</h2>
-                    <p>123 Health Ave, Medical City</p>
+                    <p>Financial Document</p>
                 </div>
                 <div class="receipt-meta">
-                    <p><strong>Receipt #:</strong> {{ currentBill.id }}</p>
-                    <p><strong>Date:</strong> {{ currentBill.date }}</p>
+                    <p><strong>Facture #:</strong> {{ currentBill.idFacture }}</p>
+                    <p><strong>Date:</strong> {{ currentBill.dateFacture | date:'dd/MM/yyyy HH:mm' }}</p>
                 </div>
             </div>
 
@@ -115,25 +129,22 @@
                         <span>Description</span>
                         <span>Price</span>
                     </div>
-                    <div class="bill-row">
-                        <span>General Consultation</span>
-                        <span>{{ currentBill.consultationPrice }} MAD</span>
-                    </div>
                     <div class="bill-row" *ngFor="let s of currentBill.services">
-                        <span>{{ s.name }}</span>
-                        <span>{{ s.price }} MAD</span>
+                        <span>{{ s.nomService }}</span>
+                        <span>{{ s.prix }} MAD</span>
                     </div>
                     <div class="bill-total">
                         <span>TOTAL</span>
-                        <span>{{ currentBill.totalPrice }} MAD</span>
+                        <span>{{ currentBill.montantTotal }} MAD</span>
                     </div>
                 </div>
             </div>
 
             <div class="bill-footer">
+                <p>Status: <strong>{{ currentBill.statut }}</strong></p>
                 <p>Thank you for your visit!</p>
                 <button class="btn-print no-print" (click)="printBill()">
-                    <i class="fas fa-print"></i> Print Receipt
+                    <i class="fas fa-print"></i> Download & Print Invoice
                 </button>
             </div>
         </div>

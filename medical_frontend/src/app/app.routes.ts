@@ -11,7 +11,6 @@ import { DoctorProfileComponent } from './features/doctor/profile/profile';
 import { SecretaryDashboardComponent } from './features/secretary/secretary-dashboard.component';
 import { UsersComponent } from './features/admin/users/users';
 import { ClinicsComponent } from './features/admin/clinics/clinics';
-import { MedicamentsComponent } from './features/admin/medicaments/medicaments';
 import { PaymentsComponent } from './features/admin/payments/payments';
 import { ProfileComponent } from './features/admin/profile/profile';
 import { SecretaryCalendarComponent } from './features/secretary/calendar/calendar';
@@ -28,7 +27,6 @@ export const routes: Routes = [
   { path: 'admin', component: AdminDashboardComponent },
   { path: 'admin/users', component: UsersComponent },
   { path: 'admin/clinics', component: ClinicsComponent },
-  { path: 'admin/medicaments', component: MedicamentsComponent },
   { path: 'admin/payments', component: PaymentsComponent },
   { path: 'admin/profile', component: ProfileComponent },
   { path: 'doctor', component: DoctorDashboardComponent },

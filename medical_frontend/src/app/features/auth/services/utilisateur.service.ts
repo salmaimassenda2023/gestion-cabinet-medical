@@ -1,3 +1,4 @@
+// utilisateur.service.ts (updated)
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
@@ -11,6 +12,7 @@ export interface UtilisateurRequest {
     prenom: string;
     numTel: string;
     role: string;
+    signature?: string;
     idCabinet?: number;
 }
 
@@ -27,12 +29,29 @@ export interface UtilisateurResponse {
     email?: string;
 }
 
+export interface UtilisateurUpdateRequest {
+    nom?: string;
+    prenom?: string;
+    numTel?: string;
+    signature?: string;
+    idCabinet?: number;
+}
+
+export interface PasswordUpdateRequest {
+    oldPassword: string;
+    newPassword: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class UtilisateurService {
     private readonly baseUrl = environment.apiUrl || 'http://localhost:8222';
     private readonly path = '/api/utilisateur/users';
+
+    // Key for storing medecin data
+    private readonly MEDECIN_STORAGE_KEY = 'medecin_data';
+    private readonly MEDECIN_ID_KEY = 'medecin_id';
 
     constructor(private http: HttpClient) { }
 
@@ -53,7 +72,10 @@ export class UtilisateurService {
         return this.http.post<UtilisateurResponse>(url, request, { headers }).pipe(
             tap(response => {
                 console.log('✅ Medecin registered:', response);
+
+                // Store medecin ID for cabinet creation
                 if (response.idUtilisateur) {
+                    this.storeMedecinData(response);
                     sessionStorage.setItem('temp_user_id', response.idUtilisateur.toString());
                 }
             }),
@@ -62,6 +84,50 @@ export class UtilisateurService {
                 return throwError(() => error);
             })
         );
+    }
+
+    // Store medecin data in localStorage
+    private storeMedecinData(medecin: UtilisateurResponse): void {
+        localStorage.setItem(this.MEDECIN_ID_KEY, medecin.idUtilisateur.toString());
+        localStorage.setItem(this.MEDECIN_STORAGE_KEY, JSON.stringify(medecin));
+        console.log('💾 Medecin data stored:', medecin);
+    }
+
+    // Get medecin ID for cabinet creation
+    getMedecinId(): number | null {
+        const id = localStorage.getItem(this.MEDECIN_ID_KEY);
+        return id ? parseInt(id, 10) : null;
+    }
+
+    // Get full medecin data
+    getMedecinData(): UtilisateurResponse | null {
+        const data = localStorage.getItem(this.MEDECIN_STORAGE_KEY);
+        return data ? JSON.parse(data) : null;
+    }
+
+    // Clear medecin data (on logout or after cabinet creation)
+    clearMedecinData(): void {
+        localStorage.removeItem(this.MEDECIN_ID_KEY);
+        localStorage.removeItem(this.MEDECIN_STORAGE_KEY);
+        sessionStorage.removeItem('temp_user_id');
+    }
+
+    // Update medecin with cabinet ID after cabinet creation
+    updateMedecinWithCabinet(cabinetId: number): void {
+        const medecinData = this.getMedecinData();
+        if (medecinData) {
+            const updatedMedecin = {
+                ...medecinData,
+                idCabinet: cabinetId
+            };
+            localStorage.setItem(this.MEDECIN_STORAGE_KEY, JSON.stringify(updatedMedecin));
+
+            // Also update in backend if needed
+            this.updateUtilisateur(medecinData.idUtilisateur, { idCabinet: cabinetId }).subscribe({
+                next: () => console.log('✅ Medecin updated with cabinet ID'),
+                error: (err) => console.error('❌ Failed to update medecin:', err)
+            });
+        }
     }
 
     createUtilisateur(request: UtilisateurRequest): Observable<UtilisateurResponse> {
@@ -81,8 +147,12 @@ export class UtilisateurService {
         return this.http.get<UtilisateurResponse[]>(`${this.baseUrl}${this.path}/cabinet/${idCabinet}`);
     }
 
-    updateUtilisateur(id: number, request: any): Observable<UtilisateurResponse> {
+    updateUtilisateur(id: number, request: UtilisateurUpdateRequest): Observable<UtilisateurResponse> {
         return this.http.put<UtilisateurResponse>(`${this.baseUrl}${this.path}/${id}`, request);
+    }
+
+    changePassword(id: number, request: PasswordUpdateRequest): Observable<void> {
+        return this.http.put<void>(`${this.baseUrl}${this.path}/${id}/password`, request);
     }
 
     getAllUsers(): Observable<UtilisateurResponse[]> {

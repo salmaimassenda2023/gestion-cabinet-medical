@@ -1,8 +1,10 @@
+// cabinet.service.ts (updated)
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { UtilisateurService } from './../../auth/services/utilisateur.service'; 
 
 export interface CabinetResponse {
     id: number;
@@ -33,6 +35,27 @@ export interface PaymentResponse {
     cabinetLogo: string;
 }
 
+export interface CabinetCreateRequest {
+    nom: string;
+    specialite: string;
+    adresse: string;
+    tel: string;
+    maxPatientsJour: number;
+    dureeConsultation: number;
+    logo?: string;
+    medecinId: number;  // Add medecinId here
+    abonnement?: {
+        typeAbonnement: string;
+        dateDebut: string;
+        dateFin: string;
+    };
+    serviceConsultationGenerale?: {
+        nom: string;
+        prix: number;
+        description?: string;
+    };
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -40,13 +63,28 @@ export class CabinetService {
     private readonly baseUrl = environment.apiUrl || 'http://localhost:8222';
     private readonly path = '/api/cabinet';
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private utilisateurService: UtilisateurService,
+    ) { }
 
-    createCabinet(cabinet: any): Observable<CabinetResponse> {
+    createCabinet(cabinetData: any): Observable<CabinetResponse> {
         console.log('🏥 Creating cabinet...');
 
-        // Clear any tokens that might interfere
-        localStorage.removeItem('auth_token');
+        // Get medecin ID from UtilisateurService
+        const medecinId = this.utilisateurService.getMedecinId();
+        
+        if (!medecinId) {
+            const error = new Error('No medecin ID found. Please register as a medecin first.');
+            console.error('❌', error.message);
+            return throwError(() => error);
+        }
+
+        // Add medecin ID to cabinet data
+        const cabinetWithMedecin: CabinetCreateRequest = {
+            ...cabinetData,
+            medecinId: medecinId
+        };
 
         const headers = new HttpHeaders({
             'Content-Type': 'application/json'
@@ -54,13 +92,19 @@ export class CabinetService {
 
         const url = `${this.baseUrl}${this.path}`;
         console.log('🔗 Request URL:', url);
-        console.log('📦 Request data:', cabinet);
+        console.log('📦 Cabinet data with medecin ID:', cabinetWithMedecin);
+        console.log('👨‍⚕️ Medecin ID:', medecinId);
 
-        return this.http.post<CabinetResponse>(url, cabinet, { headers }).pipe(
+        return this.http.post<CabinetResponse>(url, cabinetWithMedecin, { headers }).pipe(
             tap(response => {
                 console.log('✅ Cabinet created:', response);
                 if (response.id) {
+                    // Store cabinet ID
+                    localStorage.setItem('current_cabinet_id', response.id.toString());
                     sessionStorage.setItem('temp_cabinet_id', response.id.toString());
+                    
+                    // Update medecin with cabinet ID
+                    this.utilisateurService.updateMedecinWithCabinet(response.id);
                 }
             }),
             catchError(error => {

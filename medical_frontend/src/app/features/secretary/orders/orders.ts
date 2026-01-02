@@ -1,13 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-interface ScheduledOrder {
-    id: string;
-    orderNumber: number;
-    patientName: string;
-    time: string;
-    status: 'waiting' | 'in-consultation' | 'completed';
-}
+import { RendezvousService } from '../../../core/services/rendezvous.service';
+import { UtilisateurService } from '../../auth/services/utilisateur.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { RendezVous, StatutRendezVous } from '../../../core/models/rendezvous.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
     selector: 'app-secretary-orders',
@@ -17,55 +14,110 @@ interface ScheduledOrder {
     styleUrls: ['./orders.css']
 })
 export class SecretaryOrdersComponent implements OnInit {
-    orders: ScheduledOrder[] = [
-        { id: '1', orderNumber: 1, patientName: 'Peter Mullin', time: '08:00 AM', status: 'in-consultation' },
-        { id: '2', orderNumber: 2, patientName: 'Sandra Bay', time: '08:15 AM', status: 'waiting' },
-        { id: '3', orderNumber: 3, patientName: 'Andrew Kim', age: 28, mutuelleType: 'Private', gender: 'Male', status: 'waiting' } as any,
-        { id: '4', orderNumber: 4, patientName: 'Alfred Murray', time: '08:45 AM', status: 'waiting' }
-    ];
+    waitingList: RendezVous[] = [];
+    todayAppointments: RendezVous[] = [];
+    nextPatient?: RendezVous;
 
-    draggedIndex: number | null = null;
+    idCabinet?: number;
+    medecins: any[] = [];
+    selectedMedecinId?: number;
 
-    ngOnInit() { }
+    constructor(
+        private rendezvousService: RendezvousService,
+        private utilisateurService: UtilisateurService,
+        private patientService: PatientService
+    ) { }
 
-    get currentPatient() {
-        return this.orders.find(o => o.status === 'in-consultation');
+    ngOnInit() {
+        this.loadInitialData();
     }
 
-    onNext() {
-        const currentIndex = this.orders.findIndex(o => o.status === 'in-consultation');
-        if (currentIndex !== -1) {
-            this.orders[currentIndex].status = 'completed';
-            const nextIndex = this.orders.findIndex(o => o.status === 'waiting');
-            if (nextIndex !== -1) {
-                this.orders[nextIndex].status = 'in-consultation';
+    loadInitialData() {
+        this.utilisateurService.getCurrentUser().subscribe({
+            next: (user) => {
+                this.idCabinet = user.idCabinet;
+                if (this.idCabinet) {
+                    this.loadMedecins();
+                }
+            },
+            error: (err) => console.error('Error fetching current user:', err)
+        });
+    }
+
+    loadMedecins() {
+        if (!this.idCabinet) return;
+        this.utilisateurService.getUtilisateursByCabinet(this.idCabinet).subscribe({
+            next: (users) => {
+                this.medecins = users.filter(u => u.role === 'MEDECIN');
+                if (this.medecins.length > 0) {
+                    this.selectedMedecinId = this.medecins[0].idUtilisateur;
+                    this.refreshAllData();
+                }
+            },
+            error: (err) => console.error('Error fetching medecins:', err)
+        });
+    }
+
+    refreshAllData() {
+        if (!this.selectedMedecinId) return;
+
+        forkJoin({
+            daily: this.rendezvousService.getRendezVousDuJour(this.selectedMedecinId),
+            waiting: this.rendezvousService.getListeAttente(this.selectedMedecinId),
+            patients: this.patientService.getPatientsByCabinet(this.idCabinet!)
+        }).subscribe({
+            next: ({ daily, waiting, patients }) => {
+                // Map patient names
+                const mapPatientName = (rdv: RendezVous) => {
+                    const p = patients.find(pat => pat.id === rdv.idPatient);
+                    return p ? `${p.nom} ${p.prenom}` : 'Unknown Patient';
+                };
+
+                this.todayAppointments = daily.filter(rdv => rdv.statut !== StatutRendezVous.TERMINE && rdv.statut !== StatutRendezVous.PRESENT)
+                    .map(rdv => ({ ...rdv, patientName: mapPatientName(rdv) }));
+
+                this.waitingList = waiting.map(rdv => ({ ...rdv, patientName: mapPatientName(rdv) }));
+
+                this.loadNextPatient(patients);
+            },
+            error: (err) => console.error('Error refreshing data:', err)
+        });
+    }
+
+    loadNextPatient(patients: any[]) {
+        if (!this.selectedMedecinId) return;
+        this.rendezvousService.getPatientSuivant(this.selectedMedecinId).subscribe({
+            next: (rdv) => {
+                const p = patients.find(pat => pat.id === rdv.idPatient);
+                this.nextPatient = { ...rdv, patientName: p ? `${p.nom} ${p.prenom}` : 'Unknown Patient' };
+            },
+            error: (err) => {
+                this.nextPatient = undefined;
+                console.log('No next patient or error:', err);
             }
-        } else {
-            const firstWaiting = this.orders.findIndex(o => o.status === 'waiting');
-            if (firstWaiting !== -1) {
-                this.orders[firstWaiting].status = 'in-consultation';
-            }
+        });
+    }
+
+    markAsArrived(rdv: RendezVous) {
+        if (rdv.id) {
+            this.rendezvousService.ajouterEnListeAttente(rdv.id).subscribe({
+                next: () => this.refreshAllData(),
+                error: (err) => console.error('Error adding to waiting list:', err)
+            });
         }
     }
 
-    // HTML5 Drag and Drop
-    onDragStart(index: number) {
-        this.draggedIndex = index;
+    onMedecinChange(event: any) {
+        this.selectedMedecinId = +event.target.value;
+        this.refreshAllData();
     }
 
-    onDragOver(event: DragEvent) {
-        event.preventDefault();
-    }
-
-    onDrop(index: number) {
-        if (this.draggedIndex === null || this.draggedIndex === index) return;
-
-        const movedItem = this.orders.splice(this.draggedIndex, 1)[0];
-        this.orders.splice(index, 0, movedItem);
-
-        // Re-assign order numbers
-        this.orders.forEach((o, i) => o.orderNumber = i + 1);
-
-        this.draggedIndex = null;
+    onNext() {
+        if (this.nextPatient && this.nextPatient.id) {
+            this.rendezvousService.changeStatut(this.nextPatient.id, StatutRendezVous.TERMINE).subscribe({
+                next: () => this.refreshAllData(),
+                error: (err) => console.error('Error completing consultation:', err)
+            });
+        }
     }
 }

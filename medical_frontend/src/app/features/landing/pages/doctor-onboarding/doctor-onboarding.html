@@ -178,9 +178,8 @@
                 <p class="subtitle">Define your clinic's service offerings.</p>
 
                 <div class="input-group">
-                    <label>General Consultation Price ($)</label>
+                    <label>General Consultation Price (DH)</label>
                     <div class="price-input-wrapper">
-                        <span class="currency-symbol">$</span>
                         <input type="number" formControlName="generalPrice" placeholder="150" class="price-input">
                     </div>
                 </div>
@@ -194,14 +193,11 @@
                             <div class="service-inputs">
                                 <input type="text" formControlName="name" placeholder="Service Name (e.g. ECG)"
                                     class="service-name-input">
-                                <div class="price-input-wrapper small">
-                                    <span class="currency-symbol">$</span>
-                                    <input type="number" formControlName="price" placeholder="Price"
-                                        class="price-input">
-                                </div>
                             </div>
-                            <input type="text" formControlName="description" placeholder="Short description (optional)"
-                                class="service-desc-input">
+                            <div class="service-inputs">
+                                <input type="number" formControlName="price" placeholder="Price"
+                                        class="price-input">
+                            </div>
 
                             <button type="button" class="remove-service-btn" (click)="removeService(i)"
                                 title="Remove Service">

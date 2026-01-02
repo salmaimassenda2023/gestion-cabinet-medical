@@ -2,42 +2,67 @@
     <div class="orders-header">
         <div class="header-info">
             <h1>Daily Order Queue</h1>
-            <p>{{ orders.length }} Patients Scheduled for Today</p>
+            <div class="medecin-selector-wrapper">
+                <select [value]="selectedMedecinId" (change)="onMedecinChange($event)" *ngIf="medecins.length > 0"
+                    class="medecin-select">
+                    <option *ngFor="let m of medecins" [value]="m.idUtilisateur">Dr. {{ m.nom }}</option>
+                </select>
+                <p>{{ waitingList.length }} Patients waiting in line</p>
+            </div>
         </div>
-        <button class="btn-next" (click)='onNext()'>
+        <button class="btn-next" (click)='onNext()' [disabled]="!nextPatient">
             Next Patient <i class="fas fa-chevron-right"></i>
         </button>
     </div>
 
-    <div class="current-patient-card" *ngIf="currentPatient">
-        <div class="status-badge">CURRENTLY IN CONSULTATION</div>
+    <div class="current-patient-card" *ngIf="nextPatient">
+        <div class="status-badge">NEXT PATIENT TO ENTER</div>
         <div class="patient-details">
-            <div class="avatar LARGE">{{ currentPatient.patientName.charAt(0) }}</div>
+            <div class="avatar LARGE">{{ nextPatient.patientName?.charAt(0) }}</div>
             <div class="info">
-                <h2>{{ currentPatient.patientName }}</h2>
-                <span>Order #{{ currentPatient.orderNumber }} • Started at {{ currentPatient.time }}</span>
+                <h2>{{ nextPatient.patientName }}</h2>
+                <span>Order #{{ nextPatient.ordrePassage }} • Arrived at {{ nextPatient.heureArrivee | date:'HH:mm'
+                    }}</span>
+                <span class="motif-tag">{{ nextPatient.motif }}</span>
             </div>
         </div>
     </div>
 
-    <div class="queue-section">
-        <h3>Queue List <small>(Drag to reorder)</small></h3>
-        <div class="order-list">
-            <div *ngFor="let order of orders; let i = index" class="order-item"
-                [class.active]="order.status === 'in-consultation'" [class.completed]="order.status === 'completed'"
-                draggable="true" (dragstart)="onDragStart(i)" (dragover)="onDragOver($event)" (drop)="onDrop(i)">
-                <div class="drag-handle">
-                    <i class="fas fa-grip-vertical"></i>
+    <div class="queue-layout">
+        <div class="queue-section main">
+            <h3>Active Waiting List</h3>
+            <div class="order-list">
+                <div *ngFor="let order of waitingList" class="order-item" [class.next]="order.id === nextPatient?.id">
+                    <div class="order-num">#{{ order.ordrePassage }}</div>
+                    <div class="patient-info">
+                        <span class="name">{{ order.patientName }}</span>
+                        <span class="time">Arrived: {{ order.heureArrivee | date:'HH:mm' }}</span>
+                    </div>
+                    <div class="status">
+                        <span class="status-tag PRESENT">WAITING</span>
+                    </div>
                 </div>
-                <div class="order-num">#{{ order.orderNumber }}</div>
-                <div class="patient-info">
-                    <span class="name">{{ order.patientName }}</span>
-                    <span class="time">{{ order.time }}</span>
+                <div class="no-patients" *ngIf="waitingList.length === 0">
+                    No patients currently waiting.
                 </div>
-                <div class="status">
-                    <span class="status-tag" [class]="order.status">
-                        {{ order.status === 'in-consultation' ? 'CONSULTING' : order.status.toUpperCase() }}
-                    </span>
+            </div>
+        </div>
+
+        <div class="queue-section sidebar">
+            <h3>Today's Appointments</h3>
+            <div class="scheduled-list">
+                <div *ngFor="let appt of todayAppointments" class="scheduled-item">
+                    <div class="appt-time">{{ appt.heureRdv }}</div>
+                    <div class="appt-details">
+                        <span class="name">{{ appt.patientName }}</span>
+                        <span class="type">{{ appt.motif }}</span>
+                    </div>
+                    <button class="btn-arrived" (click)="markAsArrived(appt)">
+                        <i class="fas fa-check"></i> Arrived
+                    </button>
+                </div>
+                <div class="no-patients" *ngIf="todayAppointments.length === 0">
+                    No more appointments for today.
                 </div>
             </div>
         </div>

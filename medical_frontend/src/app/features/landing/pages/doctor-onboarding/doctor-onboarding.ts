@@ -296,26 +296,16 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       console.log('🚀 Starting registration process...');
       
       // Clear ALL tokens before registration
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('refresh_token');
-      sessionStorage.clear();
+      this.clearAllStorage();
       console.log('Tokens cleared');
       
-      // 1. Create Cabinet
-      const cabinetData = this.prepareCabinetData();
-      console.log('Creating cabinet:', cabinetData);
-      
-      const cabinetResponse = await this.cabinetService.createCabinet(cabinetData).toPromise();
-      
-      if (!cabinetResponse?.id) {
-        throw new Error('Cabinet creation failed - no ID returned');
-      }
-      
-      console.log('✅ Cabinet created, ID:', cabinetResponse.id);
-      
-      // 2. Register Doctor
-      const userRequest = this.prepareUserData(cabinetResponse.id);
-      console.log('Registering doctor with cabinet ID:', cabinetResponse.id);
+      // 1. REGISTER DOCTOR FIRST (Get medecin ID)
+      const userRequest = this.prepareUserData();
+      console.log('Registering doctor...', { 
+        ...userRequest, 
+        password: '[HIDDEN]',
+        signature: userRequest.signature ? '[BASE64_IMAGE]' : null 
+      });
       
       const userResponse = await this.utilisateurService.registerMedecin(userRequest).toPromise();
       
@@ -325,15 +315,30 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       
       console.log('✅ Doctor registered, ID:', userResponse.idUtilisateur);
       
-      // 3. Link user to cabinet (optional)
-      try {
-        await this.linkUserToCabinet(userResponse.idUtilisateur, cabinetResponse.id);
-        console.log('✅ User linked to cabinet');
-      } catch (linkError) {
-        console.log('⚠️ Could not link user to cabinet:', linkError);
+      // 2. CREATE CABINET WITH MEDECIN ID
+      const cabinetData = this.prepareCabinetData();
+      console.log('Creating cabinet for medecin:', userResponse.idUtilisateur);
+      
+      const cabinetResponse = await this.cabinetService.createCabinet(cabinetData).toPromise();
+      
+      if (!cabinetResponse?.id) {
+        throw new Error('Cabinet creation failed - no ID returned');
       }
       
-      // 4. Add Services (optional - can fail)
+      console.log('✅ Cabinet created, ID:', cabinetResponse.id);
+      
+      // 3. UPDATE DOCTOR WITH CABINET ID
+      try {
+        await this.utilisateurService.updateUtilisateur(
+          userResponse.idUtilisateur, 
+          { idCabinet: cabinetResponse.id }
+        ).toPromise();
+        console.log('✅ Doctor updated with cabinet ID');
+      } catch (updateError) {
+        console.log('⚠️ Could not update doctor with cabinet ID:', updateError);
+      }
+      
+      // 4. ADD SERVICES
       try {
         await this.addServices(cabinetResponse.id);
         console.log('✅ Services added');
@@ -344,12 +349,18 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
       // 5. Payment processing
       console.log('Payment method ID:', paymentMethodId);
       
+      // Store final data
+      this.storeFinalData(userResponse, cabinetResponse);
+      
       // SUCCESS!
       alert('🎉 Registration complete! Please login with your credentials.');
       this.router.navigate(['/login']);
       
     } catch (error: any) {
       console.error('❌ Registration failed:', error);
+      
+      // Clear storage on error
+      this.clearAllStorage();
       
       if (error.status === 401) {
         alert('Authentication issue. Please try again or clear browser cache.');
@@ -363,6 +374,69 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
     }
   }
 
+  private clearAllStorage(): void {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+
+  private storeFinalData(user: UtilisateurResponse, cabinet: CabinetResponse): void {
+    localStorage.setItem('medecin_data', JSON.stringify(user));
+    localStorage.setItem('cabinet_data', JSON.stringify(cabinet));
+    localStorage.setItem('medecin_id', user.idUtilisateur.toString());
+    localStorage.setItem('cabinet_id', cabinet.id.toString());
+  }
+
+  private prepareCabinetData(): any {
+    const clinicData = this.clinicForm.value;
+    const servicesData = this.servicesForm.value;
+
+    return {
+      nom: clinicData.name,
+      specialite: clinicData.specialty,
+      adresse: clinicData.address,
+      tel: clinicData.tel,
+      tarifConsultation: parseFloat(servicesData.generalPrice) || 200,
+      maxPatientsJour: parseInt(clinicData.maxPatients, 10) || 20,
+      dureeConsultation: parseInt(clinicData.consultationTime, 10) || 30,
+      logo: clinicData.logo || null,
+      abonnement: {
+        typePeriode: this.selectedPlan.toLowerCase() === 'monthly' ? 'MENSUEL' : 'ANNUEL',
+        montant: this.selectedPlan.toLowerCase() === 'monthly' ? 29.99 : 299.99
+      },
+      serviceConsultationGenerale: {
+        nomService: 'Consultation Générale',
+        prix: parseFloat(servicesData.generalPrice) || 200,
+        description: 'Consultation médicale générale',
+        obligatoire: true
+      }
+      // medecinId will be added by CabinetService from localStorage
+    };
+  }
+
+  private prepareUserData(): UtilisateurRequest {
+    const personalData = this.personalForm.value;
+    
+    // Get signature (either drawn or uploaded)
+    let signature = null;
+    if (this.signatureImage) {
+      // If drawn signature
+      signature = this.signatureImage;
+    } else if (personalData.signature) {
+      // If uploaded signature
+      signature = personalData.signature;
+    }
+
+    return {
+      login: personalData.username,
+      password: personalData.password,
+      nom: personalData.lastName,
+      prenom: personalData.firstName,
+      numTel: personalData.tel,
+      role: 'MEDECIN',
+      signature: signature,  // Include signature
+      // Don't include idCabinet here - it will be set after cabinet creation
+    };
+  }
   private async linkUserToCabinet(userId: number, cabinetId: number): Promise<any> {
     const headers = new HttpHeaders({
       'Content-Type': 'application/json'
@@ -393,45 +467,7 @@ export class DoctorOnboardingComponent implements AfterViewInit, OnInit {
     return true;
   }
 
-  private prepareCabinetData(): any {
-    const clinicData = this.clinicForm.value;
-    const servicesData = this.servicesForm.value;
-
-    return {
-      nom: clinicData.name,
-      specialite: clinicData.specialty,
-      adresse: clinicData.address,
-      tel: clinicData.tel,
-      tarifConsultation: parseFloat(servicesData.generalPrice) || 200,
-      maxPatientsJour: parseInt(clinicData.maxPatients, 10) || 20,
-      dureeConsultation: parseInt(clinicData.consultationTime, 10) || 30,
-      logo: clinicData.logo || null,
-      abonnement: {
-        typePeriode: this.selectedPlan.toLowerCase() === 'monthly' ? 'MENSUEL' : 'ANNUEL',
-        montant: this.selectedPlan.toLowerCase() === 'monthly' ? 29.99 : 299.99
-      },
-      serviceConsultationGenerale: {
-        nomService: 'Consultation Générale',
-        prix: parseFloat(servicesData.generalPrice) || 200,
-        description: 'Consultation médicale générale',
-        obligatoire: true
-      }
-    };
-  }
-
-  private prepareUserData(cabinetId: number): UtilisateurRequest {
-    const personalData = this.personalForm.value;
-
-    return {
-      login: personalData.username,
-      password: personalData.password,
-      nom: personalData.lastName,
-      prenom: personalData.firstName,
-      numTel: personalData.tel,
-      role: 'MEDECIN',
-      idCabinet: cabinetId
-    };
-  }
+  
 
   private async addServices(cabinetId: number): Promise<void> {
     const additionalServices = this.additionalServices.value;

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { UtilisateurService, UtilisateurResponse, UtilisateurRequest } from '../../auth/services/utilisateur.service';
 
 import { FormsModule } from '@angular/forms';
 
@@ -14,35 +15,52 @@ import { FormsModule } from '@angular/forms';
     styleUrls: ['./secretary-management.css']
 })
 export class SecretaryManagementComponent implements OnInit {
-    secretaries = [
-        { id: 1, name: 'Alice Smith', email: 'alice@example.com', phone: '123-456-7890', address: '123 Main St, New York', status: 'active' },
-        { id: 2, name: 'Bob Jones', email: 'bob@example.com', phone: '098-765-4321', address: '456 Oak Ave, Los Angeles', status: 'active' },
-        { id: 3, name: 'Claire Brown', email: 'claire@example.com', phone: '555-0199', address: '789 Pine Rd, Chicago', status: 'deactivate' }
-    ];
+    secretaries: UtilisateurResponse[] = [];
+    idCabinet?: number;
 
     isModalOpen = false;
     isDeleteModalOpen = false;
-    editingSecretary: any = null;
-    secretaryToDelete: any = null;
+    editingSecretary: UtilisateurResponse | null = null;
+    secretaryToDelete: UtilisateurResponse | null = null;
 
     // Form Model
     secretaryForm = {
-        id: 0,
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        status: 'active'
+        login: '',
+        password: '',
+        nom: '',
+        prenom: '',
+        numTel: '',
+        actif: true
     };
 
-    ngOnInit() { }
+    constructor(private utilisateurService: UtilisateurService) { }
 
-    onLogout() {
-        console.log('Logging out...');
+    ngOnInit() {
+        this.loadCurrentUserAndSecretaries();
     }
 
-    onSearch(term: string) {
-        console.log('Searching for:', term);
+    loadCurrentUserAndSecretaries() {
+        this.utilisateurService.getCurrentUser().subscribe({
+            next: (user) => {
+                this.idCabinet = user.idCabinet;
+                if (this.idCabinet) {
+                    this.loadSecretaries();
+                }
+            },
+            error: (err) => console.error('Error fetching current user:', err)
+        });
+    }
+
+    loadSecretaries() {
+        if (this.idCabinet) {
+            this.utilisateurService.getUtilisateursByCabinet(this.idCabinet).subscribe({
+                next: (users) => {
+                    // Filter for only secretaries
+                    this.secretaries = users.filter(u => u.role === 'SECRETAIRE');
+                },
+                error: (err) => console.error('Error fetching secretaries:', err)
+            });
+        }
     }
 
     addSecretary() {
@@ -51,51 +69,101 @@ export class SecretaryManagementComponent implements OnInit {
         this.isModalOpen = true;
     }
 
-    editSecretary(sec: any) {
+    editSecretary(sec: UtilisateurResponse) {
         this.editingSecretary = { ...sec };
-        this.secretaryForm = { ...sec };
+        this.secretaryForm = {
+            login: sec.login,
+            password: '', // Password not shown on edit
+            nom: sec.nom,
+            prenom: sec.prenom,
+            numTel: sec.numTel,
+            actif: sec.actif
+        };
         this.isModalOpen = true;
     }
 
-    confirmDelete(sec: any) {
+    confirmDelete(sec: UtilisateurResponse) {
         this.secretaryToDelete = sec;
         this.isDeleteModalOpen = true;
     }
 
     onConfirmDelete() {
-        if (this.secretaryToDelete) {
-            this.secretaries = this.secretaries.filter(s => s.id !== this.secretaryToDelete.id);
+        if (this.secretaryToDelete && this.secretaryToDelete.idUtilisateur) {
+            this.utilisateurService.deleteUser(this.secretaryToDelete.idUtilisateur).subscribe({
+                next: () => {
+                    this.loadSecretaries();
+                    this.isDeleteModalOpen = false;
+                    this.secretaryToDelete = null;
+                },
+                error: (err) => console.error('Error deleting secretary:', err)
+            });
         }
-        this.isDeleteModalOpen = false;
-        this.secretaryToDelete = null;
     }
 
     saveSecretary() {
-        if (!this.secretaryForm.name || !this.secretaryForm.email) return;
+        if (!this.secretaryForm.login || !this.secretaryForm.nom || !this.secretaryForm.prenom) return;
 
-        if (this.editingSecretary) {
+        if (this.editingSecretary && this.editingSecretary.idUtilisateur) {
             // Update
-            const index = this.secretaries.findIndex(s => s.id === this.editingSecretary.id);
-            if (index !== -1) {
-                this.secretaries[index] = { ...this.secretaryForm };
-            }
+            const updateRequest = {
+                nom: this.secretaryForm.nom,
+                prenom: this.secretaryForm.prenom,
+                numTel: this.secretaryForm.numTel
+            };
+            this.utilisateurService.updateUtilisateur(this.editingSecretary.idUtilisateur, updateRequest).subscribe({
+                next: () => {
+                    // Handle status separately if it changed
+                    if (this.editingSecretary && this.editingSecretary.actif !== this.secretaryForm.actif) {
+                        this.updateStatus(this.editingSecretary.idUtilisateur!, this.secretaryForm.actif);
+                    } else {
+                        this.loadSecretaries();
+                        this.isModalOpen = false;
+                        this.resetForm();
+                    }
+                },
+                error: (err) => console.error('Error updating secretary:', err)
+            });
         } else {
             // Create
-            const newId = this.secretaries.length > 0 ? Math.max(...this.secretaries.map(s => s.id)) + 1 : 1;
-            this.secretaries.push({ ...this.secretaryForm, id: newId });
+            const newSecretary: UtilisateurRequest = {
+                login: this.secretaryForm.login,
+                password: this.secretaryForm.password,
+                nom: this.secretaryForm.nom,
+                prenom: this.secretaryForm.prenom,
+                numTel: this.secretaryForm.numTel,
+                role: 'SECRETAIRE',
+                idCabinet: this.idCabinet
+            };
+            this.utilisateurService.createUtilisateur(newSecretary).subscribe({
+                next: () => {
+                    this.loadSecretaries();
+                    this.isModalOpen = false;
+                    this.resetForm();
+                },
+                error: (err) => console.error('Error creating secretary:', err)
+            });
         }
-        this.isModalOpen = false;
-        this.resetForm();
+    }
+
+    private updateStatus(id: number, active: boolean) {
+        this.utilisateurService.updateUserStatus(id, active).subscribe({
+            next: () => {
+                this.loadSecretaries();
+                this.isModalOpen = false;
+                this.resetForm();
+            },
+            error: (err) => console.error('Error updating secretary status:', err)
+        });
     }
 
     private resetForm() {
         this.secretaryForm = {
-            id: 0,
-            name: '',
-            email: '',
-            phone: '',
-            address: '',
-            status: 'active'
+            login: '',
+            password: '',
+            nom: '',
+            prenom: '',
+            numTel: '',
+            actif: true
         };
     }
 }

@@ -5,36 +5,59 @@
             <input type="text" id="cin" formControlName="cin" placeholder="Enter CIN">
         </div>
         <div class="form-group">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" formControlName="name" placeholder="Enter name">
+            <label for="nom">Nom</label>
+            <input type="text" id="nom" formControlName="nom" placeholder="Enter Nom">
+        </div>
+        <div class="form-group">
+            <label for="prenom">Prénom</label>
+            <input type="text" id="prenom" formControlName="prenom" placeholder="Enter Prénom">
         </div>
     </div>
 
     <div class="form-row">
         <div class="form-group">
-            <label for="age">Age</label>
-            <input type="number" id="age" formControlName="age" placeholder="Age">
+            <label for="dateNaissance">Date de Naissance</label>
+            <input type="date" id="dateNaissance" formControlName="dateNaissance">
         </div>
         <div class="form-group">
-            <label for="mutuelleType">Mutuelle Type</label>
-            <select id="mutuelleType" formControlName="mutuelleType">
-                <option value="">Select Type</option>
-                <option value="CNAM">CNAM</option>
-                <option value="CIMR">CIMR</option>
-                <option value="Private">Private</option>
-                <option value="None">None</option>
-            </select>
+            <label for="telephone">Téléphone</label>
+            <input type="tel" id="telephone" formControlName="telephone" placeholder="Phone number">
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" formControlName="email" placeholder="Email address">
         </div>
     </div>
 
     <div class="form-group">
-        <label>Gender</label>
+        <label for="adresse">Adresse</label>
+        <input type="text" id="adresse" formControlName="adresse" placeholder="Home address">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="typeMutuelle">Type Mutuelle</label>
+            <select id="typeMutuelle" formControlName="typeMutuelle">
+                <option value="">None</option>
+                <option value="CNAM">CNAM</option>
+                <option value="CIMR">CIMR</option>
+                <option value="Private">Private</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="numeroMutuelle">Numéro Mutuelle</label>
+            <input type="text" id="numeroMutuelle" formControlName="numeroMutuelle" placeholder="Insurance ID">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Sexe</label>
         <div class="gender-options">
             <label class="radio-label">
-                <input type="radio" formControlName="gender" value="Male"> Male
+                <input type="radio" formControlName="sexe" value="M"> Masculin
             </label>
             <label class="radio-label">
-                <input type="radio" formControlName="gender" value="Female"> Female
+                <input type="radio" formControlName="sexe" value="F"> Féminin
             </label>
         </div>
     </div>
