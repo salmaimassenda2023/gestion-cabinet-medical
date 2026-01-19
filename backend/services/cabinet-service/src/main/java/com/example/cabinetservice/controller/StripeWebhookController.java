@@ -61,8 +61,6 @@ public class StripeWebhookController {
     private void handlePaymentSucceeded(PaymentIntent paymentIntent) {
         log.info("Payment succeeded: {}", paymentIntent.getId());
 
-        // Extract metadata to identify the subscription/cabinet
-        // Assuming metadata contains "abonnementId"
         String abonnementIdStr = paymentIntent.getMetadata().get("abonnementId");
 
         if (abonnementIdStr != null) {

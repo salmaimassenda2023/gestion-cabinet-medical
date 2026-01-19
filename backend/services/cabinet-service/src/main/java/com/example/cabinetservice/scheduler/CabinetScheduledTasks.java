@@ -1,6 +1,5 @@
 package com.example.cabinetservice.scheduler;
 
-import com.example.cabinetservice.client.NotificationClient;
 import com.example.cabinetservice.dto.NotificationDTO;
 import com.example.cabinetservice.entity.AbonnementCabinet;
 import com.example.cabinetservice.enums.AbonnementStatus;
@@ -36,15 +35,7 @@ public class CabinetScheduledTasks {
             log.info("Found {} expiring abonnements.", expiring.size());
             expiring.forEach(abo -> {
                 try {
-                    // Assuming cabinet has an admin ID associated, or we use a fallback
-                    // For now, let's assume we can get it from the cabinet or user service if
-                    // needed.
-                    // But the entity might not have it directly.
-                    // Let's assume for this task we pass a placeholder or if connected to user we'd
-                    // fetch it.
-                    // However, AbonnementCabinet -> Cabinet -> idUtilisateur (Admin) usually.
-                    // Let's check Cabinet entity structure first if needed, but for now I will
-                    // assume I can get it.
+                    
                     Long adminId = abo.getCabinet().getMedecinId();
 
                     NotificationDTO.AbonnementExpirationDTO aboDto = NotificationDTO.AbonnementExpirationDTO.builder()
@@ -52,7 +43,7 @@ public class CabinetScheduledTasks {
                             .nomCabinet(abo.getCabinet().getNom())
                             .dateExpiration(abo.getDateFin().toLocalDate())
                             .joursRestants(7)
-                            .montant(abo.getMontant()) // or calculate total
+                            .montant(abo.getMontant()) 
                             .adminId(adminId)
                             .build();
 

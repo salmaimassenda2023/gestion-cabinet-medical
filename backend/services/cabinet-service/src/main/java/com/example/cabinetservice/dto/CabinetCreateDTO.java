@@ -1,6 +1,5 @@
 package com.example.cabinetservice.dto;
 
-import com.example.cabinetservice.enums.TypePeriode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

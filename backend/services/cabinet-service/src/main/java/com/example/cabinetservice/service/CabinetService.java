@@ -1,11 +1,8 @@
 package com.example.cabinetservice.service;
 
-import com.example.cabinetservice.dto.CabinetCreateDTO;
-import com.example.cabinetservice.dto.CabinetResponseDTO;
-import com.example.cabinetservice.dto.CabinetUpdateDTO;
-import com.example.cabinetservice.dto.PaiementResponseDTO;
-import com.example.cabinetservice.dto.ServiceConsultationDTO;
+import com.example.cabinetservice.dto.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,6 +16,8 @@ public interface CabinetService {
 
     void deleteCabinet(Long id);
 
+    CabinetResponseDTO getCabinetByMedecinId(Long medecinId);
+
     Boolean isCabinetActive(Long id);
 
     ServiceConsultationDTO addService(Long cabinetId, ServiceConsultationDTO dto);
@@ -29,7 +28,13 @@ public interface CabinetService {
 
     List<CabinetResponseDTO> getAllCabinets();
 
-    List<PaiementResponseDTO> getAllPaiements();
+    @Transactional(readOnly = true)
+    CabinetResponseDTO getCabinetByUserId(Long userId);
+
+    List<AbonnementResponseDTO> getAllAbonnements();
 
     void handleSuccessfulPayment(Long abonnementId, Double amount, String stripePaymentId);
+
+    @Transactional(readOnly = true)
+    CabinetResponseDTO getCabinetForUser(Long userId);
 }

@@ -8,7 +8,7 @@ export interface Clinic {
     address: string;
     phone: string;
     specialty: string;
-    doctor: string; // Refers to a user name or ID
+    doctor: string; 
     status: 'active' | 'deactivate';
 }
 

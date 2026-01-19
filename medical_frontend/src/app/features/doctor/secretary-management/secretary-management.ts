@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { UtilisateurService, UtilisateurResponse, UtilisateurRequest } from '../../auth/services/utilisateur.service';
-
 import { FormsModule } from '@angular/forms';
+import { CabinetService } from '../../doctor/services/cabinet.service';
+import { switchMap, catchError, tap, finalize, takeUntil } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
 
 @Component({
     selector: 'app-secretary-management',
@@ -14,9 +16,12 @@ import { FormsModule } from '@angular/forms';
     templateUrl: './secretary-management.html',
     styleUrls: ['./secretary-management.css']
 })
-export class SecretaryManagementComponent implements OnInit {
+export class SecretaryManagementComponent implements OnInit, OnDestroy {
     secretaries: UtilisateurResponse[] = [];
-    idCabinet?: number;
+    idCabinet!: number;
+    isLoading = true;
+    errorMessage = '';
+    dataLoaded = false;
 
     isModalOpen = false;
     isDeleteModalOpen = false;
@@ -30,40 +35,125 @@ export class SecretaryManagementComponent implements OnInit {
         nom: '',
         prenom: '',
         numTel: '',
-        actif: true
     };
 
-    constructor(private utilisateurService: UtilisateurService) { }
+    private destroy$ = new Subject<void>();
 
-    ngOnInit() {
-        this.loadCurrentUserAndSecretaries();
+    constructor(
+        private utilisateurService: UtilisateurService,
+        private cabinetService: CabinetService,
+        private cdr: ChangeDetectorRef  
+    ) { 
+        console.log('🔨 Component constructor called');
     }
 
-    loadCurrentUserAndSecretaries() {
-        this.utilisateurService.getCurrentUser().subscribe({
-            next: (user) => {
-                this.idCabinet = user.idCabinet;
-                if (this.idCabinet) {
-                    this.loadSecretaries();
+    ngOnInit() {
+        console.log('🔨 ngOnInit called');
+        this.loadData();
+    }
+
+    ngOnDestroy() {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    trackById(index: number, item: UtilisateurResponse): number {
+        return item.idUtilisateur || index;
+    }
+
+    loadData() {
+        console.log('🚀 loadData() called');
+        this.isLoading = true;
+        this.errorMessage = '';
+        
+        this.utilisateurService.getCurrentUser().pipe(
+            takeUntil(this.destroy$),
+            tap(user => {
+                console.log('📋 Current user:', user);
+            }),
+            switchMap(user => {
+                if (!user?.idUtilisateur) {
+                    throw new Error('No user ID found');
                 }
+                return this.cabinetService.getCabinetByMedecinId(user.idUtilisateur);
+            }),
+            switchMap(cabinet => {
+                console.log('📦 Cabinet:', cabinet);
+                
+                if (!cabinet?.id) {
+                    throw new Error('No cabinet found');
+                }
+                
+                this.idCabinet = cabinet.id;
+                return this.utilisateurService.getUtilisateursByCabinet(this.idCabinet);
+            }),
+            catchError(err => {
+                console.error('❌ Error:', err);
+                this.errorMessage = err.message || 'Error loading data';
+                return of([]);
+            }),
+            finalize(() => {
+                this.isLoading = false;
+                this.cdr.detectChanges(); 
+                console.log('🔄 Change detection triggered');
+            })
+        ).subscribe({
+            next: (users) => {
+                console.log('✅ Users received:', users);
+                this.secretaries = (users || []).filter(u => u?.role === 'SECRETAIRE');
+                console.log('✅ Secretaries filtered:', this.secretaries.length);
             },
-            error: (err) => console.error('Error fetching current user:', err)
+            error: (err) => {
+                console.error('❌ Subscription error:', err);
+                this.errorMessage = 'Failed to load data';
+            }
         });
     }
 
-    loadSecretaries() {
-        if (this.idCabinet) {
-            this.utilisateurService.getUtilisateursByCabinet(this.idCabinet).subscribe({
-                next: (users) => {
-                    // Filter for only secretaries
-                    this.secretaries = users.filter(u => u.role === 'SECRETAIRE');
-                },
-                error: (err) => console.error('Error fetching secretaries:', err)
-            });
+
+
+    private loadSecretariesData() {
+        if (!this.idCabinet) {
+            return of([]);
         }
+        
+        return this.utilisateurService.getUtilisateursByCabinet(this.idCabinet).pipe(
+            tap(users => {
+                console.log('✅ Raw users from API:', users);
+            }),
+            catchError(err => {
+                console.error('❌ Error fetching users:', err);
+                this.errorMessage = 'Error loading secretaries.';
+                return of([]);
+            })
+        );
+    }
+
+    loadSecretaries() {
+        this.isLoading = true;
+        this.errorMessage = '';
+        
+        this.loadSecretariesData().pipe(
+            finalize(() => {
+                this.isLoading = false;
+            })
+        ).subscribe({
+            next: (users) => {
+                this.secretaries = users.filter((u: UtilisateurResponse) => u.role === 'SECRETAIRE');
+                console.log('✅ Loaded secretaries:', this.secretaries);
+            },
+            error: (err) => {
+                console.error('❌ Error in loadSecretaries:', err);
+                this.errorMessage = 'Error loading secretaries.';
+            }
+        });
     }
 
     addSecretary() {
+        if (!this.idCabinet) {
+            alert('Cabinet ID not available. Please refresh the page.');
+            return;
+        }
         this.editingSecretary = null;
         this.resetForm();
         this.isModalOpen = true;
@@ -73,11 +163,10 @@ export class SecretaryManagementComponent implements OnInit {
         this.editingSecretary = { ...sec };
         this.secretaryForm = {
             login: sec.login,
-            password: '', // Password not shown on edit
+            password: '',
             nom: sec.nom,
             prenom: sec.prenom,
             numTel: sec.numTel,
-            actif: sec.actif
         };
         this.isModalOpen = true;
     }
@@ -89,42 +178,67 @@ export class SecretaryManagementComponent implements OnInit {
 
     onConfirmDelete() {
         if (this.secretaryToDelete && this.secretaryToDelete.idUtilisateur) {
-            this.utilisateurService.deleteUser(this.secretaryToDelete.idUtilisateur).subscribe({
+            this.isLoading = true;
+            this.utilisateurService.deleteUser(this.secretaryToDelete.idUtilisateur).pipe(
+                finalize(() => {
+                    this.isLoading = false;
+                })
+            ).subscribe({
                 next: () => {
                     this.loadSecretaries();
                     this.isDeleteModalOpen = false;
                     this.secretaryToDelete = null;
                 },
-                error: (err) => console.error('Error deleting secretary:', err)
+                error: (err) => {
+                    console.error('❌ Error deleting secretary:', err);
+                    this.errorMessage = 'Error deleting secretary.';
+                }
             });
         }
     }
 
-    saveSecretary() {
-        if (!this.secretaryForm.login || !this.secretaryForm.nom || !this.secretaryForm.prenom) return;
+    onCancelDelete() {
+        this.isDeleteModalOpen = false;
+        this.secretaryToDelete = null;
+    }
 
+    saveSecretary() {
+        if (!this.secretaryForm.login || !this.secretaryForm.nom || !this.secretaryForm.prenom || !this.secretaryForm.numTel) {
+            alert('Please fill in all required fields: Login, First Name, Last Name, and Phone Number');
+            return;
+        }
+
+        if (!this.idCabinet) {
+            alert('Error: Cabinet ID not found. Please refresh and try again.');
+            return;
+        }
+        const currentCabinetId = this.idCabinet;
+
+        this.isLoading = true;
+        
         if (this.editingSecretary && this.editingSecretary.idUtilisateur) {
-            // Update
             const updateRequest = {
                 nom: this.secretaryForm.nom,
                 prenom: this.secretaryForm.prenom,
                 numTel: this.secretaryForm.numTel
             };
-            this.utilisateurService.updateUtilisateur(this.editingSecretary.idUtilisateur, updateRequest).subscribe({
+            
+            this.utilisateurService.updateUtilisateur(this.editingSecretary.idUtilisateur, updateRequest).pipe(
+                finalize(() => {
+                    this.isLoading = false;
+                })
+            ).subscribe({
                 next: () => {
-                    // Handle status separately if it changed
-                    if (this.editingSecretary && this.editingSecretary.actif !== this.secretaryForm.actif) {
-                        this.updateStatus(this.editingSecretary.idUtilisateur!, this.secretaryForm.actif);
-                    } else {
-                        this.loadSecretaries();
-                        this.isModalOpen = false;
-                        this.resetForm();
-                    }
+                    this.loadSecretaries();
+                    this.isModalOpen = false;
+                    this.resetForm();
                 },
-                error: (err) => console.error('Error updating secretary:', err)
+                error: (err) => {
+                    console.error('❌ Error updating secretary:', err);
+                    this.errorMessage = 'Error updating secretary.';
+                }
             });
         } else {
-            // Create
             const newSecretary: UtilisateurRequest = {
                 login: this.secretaryForm.login,
                 password: this.secretaryForm.password,
@@ -132,28 +246,36 @@ export class SecretaryManagementComponent implements OnInit {
                 prenom: this.secretaryForm.prenom,
                 numTel: this.secretaryForm.numTel,
                 role: 'SECRETAIRE',
-                idCabinet: this.idCabinet
+                signature: '',
+                idCabinet: currentCabinetId
             };
-            this.utilisateurService.createUtilisateur(newSecretary).subscribe({
-                next: () => {
+
+            console.log('📝 Creating secretary with data:', newSecretary);
+            console.log('📝 Using cabinet ID:', currentCabinetId);
+
+            this.utilisateurService.createUtilisateur(newSecretary).pipe(
+                finalize(() => {
+                    this.isLoading = false;
+                })
+            ).subscribe({
+                next: (response) => {
+                    console.log('✅ Secretary created successfully:', response);
+                    this.idCabinet = currentCabinetId;
                     this.loadSecretaries();
                     this.isModalOpen = false;
                     this.resetForm();
                 },
-                error: (err) => console.error('Error creating secretary:', err)
+                error: (err) => {
+                    console.error('❌ Error creating secretary:', err);
+                    console.error('❌ Error details:', err.error);
+                    this.errorMessage = 'Error creating secretary. Please check the console for details.';
+                }
             });
         }
     }
 
-    private updateStatus(id: number, active: boolean) {
-        this.utilisateurService.updateUserStatus(id, active).subscribe({
-            next: () => {
-                this.loadSecretaries();
-                this.isModalOpen = false;
-                this.resetForm();
-            },
-            error: (err) => console.error('Error updating secretary status:', err)
-        });
+    refreshData() {
+        this.loadData();
     }
 
     private resetForm() {
@@ -163,7 +285,6 @@ export class SecretaryManagementComponent implements OnInit {
             nom: '',
             prenom: '',
             numTel: '',
-            actif: true
         };
     }
 }

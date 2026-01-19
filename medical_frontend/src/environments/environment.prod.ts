@@ -1,6 +1,7 @@
 export const environment = {
     production: true,
     apiUrl: 'http://localhost:8222',
+    wsUrl: 'ws://localhost:8222/ws/notifications',
     keycloak: {
         url: 'http://localhost:9098',
         realm: 'cabinet-medical',

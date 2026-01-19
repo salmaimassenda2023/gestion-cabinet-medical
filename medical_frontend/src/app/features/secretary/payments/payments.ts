@@ -1,165 +1,406 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaiementService } from '../../../core/services/paiement.service';
+import { ConsultationService } from '../../../core/services/consultation.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { UtilisateurService } from '../../auth/services/utilisateur.service';
-import { forkJoin } from 'rxjs';
+import { CabinetService } from '../../doctor/services/cabinet.service';
+import { ModalComponent } from "../../../shared/components/modal/modal.component";
+import { PaymentFormComponent } from "./payment-bill/payment-bill";
+import { switchMap, catchError, tap, finalize } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
 
 @Component({
-    selector: 'app-secretary-payments',
-    standalone: true,
-    imports: [CommonModule, FormsModule, ModalComponent],
+    selector: 'app-payments',
     templateUrl: './payments.html',
-    styleUrls: ['./payments.css']
+    styleUrls: ['./payments.css'],
+    imports: [ModalComponent, CommonModule, FormsModule, PaymentFormComponent]
 })
-export class SecretaryPaymentsComponent implements OnInit {
+export class SecretaryPaymentComponent implements OnInit, OnDestroy {
+    // Data arrays
     payments: any[] = [];
-    availableServices: any[] = [
-        { id: 1, nomService: 'Blood Test', prix: 50 },
-        { id: 2, nomService: 'X-Ray', prix: 120 },
-        { id: 3, nomService: 'Vaccination', prix: 25 },
-        { id: 4, nomService: 'MRI', prix: 450 }
-    ];
+    filteredPayments: any[] = [];
 
-    consultationBasePrice = 30;
-    isPayModalOpen = false;
-    isBillModalOpen = false;
+    // Current cabinet ID
+    currentCabinetId: number | null = null;
 
-    selectedPatientId?: number;
-    selectedConsultationId?: number;
-    selectedServices: any[] = [];
-    currentBill?: any;
+    // Filters
+    selectedStatus: string = 'ALL';
+    searchTerm: string = '';
 
-    patients: any[] = [];
-    consultations: any[] = [];
+    // UI states
+    isLoading: boolean = true;
+    isProcessing: boolean = false;
+    isPaymentFormOpen: boolean = false;
+    isBillModalOpen: boolean = false;
+    isDeleteModalOpen: boolean = false;
+    dataLoaded: boolean = false;
+    errorMessage: string = '';
+
+    // Current items
+    currentBill: any = null;
+    billToDelete: any = null;
+
+    // Statistics
+    stats = {
+        total: 0,
+        pending: 0,
+        paid: 0,
+        cancelled: 0,
+        totalAmount: 0,
+        pendingAmount: 0,
+        paidAmount: 0
+    };
+
+    private destroy$ = new Subject<void>();
 
     constructor(
         private paiementService: PaiementService,
+        private consultationService: ConsultationService,
         private patientService: PatientService,
-        private utilisateurService: UtilisateurService
-    ) { }
-
-    ngOnInit() {
-        this.loadInitialData();
+        private utilisateurService: UtilisateurService,
+        private cabinetService: CabinetService,
+        private cdr: ChangeDetectorRef
+    ) { 
+        console.log('🔨 SecretaryPaymentComponent constructor called');
     }
 
-    loadInitialData() {
-        this.utilisateurService.getCurrentUser().subscribe({
-            next: (user) => {
-                if (user.idCabinet) {
-                    this.loadPatientsAndPayments(user.idCabinet);
-                }
+    ngOnInit(): void {
+        console.log('SecretaryPaymentComponent initialized');
+        this.loadData();
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    
+loadData(): void {
+    console.log('🚀 loadData() called for payments');
+    this.isLoading = true;
+    this.errorMessage = '';
+    
+    // First get current user
+    this.utilisateurService.getCurrentUser().pipe(
+        switchMap(user => {
+            console.log('👤 Current user:', user);
+            
+            if (!user?.idUtilisateur) {
+                throw new Error('No user ID found');
             }
-        });
-    }
-
-    loadPatientsAndPayments(idCabinet: number) {
-        forkJoin({
-            patients: this.patientService.getPatientsByCabinet(idCabinet),
-            consultations: this.paiementService.searchConsultations() // Get all for now, filter as needed
-        }).subscribe({
-            next: ({ patients, consultations }) => {
-                this.patients = patients;
-                this.consultations = consultations;
-                this.mapPayments();
+            
+            // Use getCabinetByMedecinId() with current user ID
+            return this.cabinetService.getCabinetByMedecinId(user.idUtilisateur);
+        }),
+        tap(cabinet => {
+            console.log('📦 Cabinet loaded:', cabinet);
+            
+            if (!cabinet?.id) {
+                throw new Error('No cabinet found for this user.');
             }
-        });
-    }
-
-    mapPayments() {
-        // Flat list of all factures from all consultations
-        const allPayments: any[] = [];
-        this.consultations.forEach(c => {
-            const patient = this.patients.find(p => p.id === c.idPatient);
-            if (c.factures && c.factures.length > 0) {
-                c.factures.forEach((f: any) => {
-                    allPayments.push({
-                        ...f,
-                        patientName: patient ? `${patient.nom} ${patient.prenom}` : 'Unknown Patient',
-                        consultationId: c.idConsultation
-                    });
-                });
+            
+            this.currentCabinetId = cabinet.id;
+            console.log('✅ Cabinet ID set:', this.currentCabinetId);
+            localStorage.setItem('cabinetId', cabinet.id.toString());
+        }),
+        switchMap(() => {
+            if (!this.currentCabinetId) {
+                throw new Error('Cabinet ID not available');
             }
-        });
-
-        // Sort by date descending (newest on top)
-        this.payments = allPayments.sort((a, b) =>
-            new Date(b.dateFacture).getTime() - new Date(a.dateFacture).getTime()
-        );
-    }
-
-    openPayModal() {
-        this.selectedPatientId = undefined;
-        this.selectedConsultationId = undefined;
-        this.selectedServices = [];
-        this.isPayModalOpen = true;
-    }
-
-    onPatientChange() {
-        if (this.selectedPatientId) {
-            this.selectedConsultationId = undefined;
-            // Filter consultations for this patient that don't have a paid facture yet
-            // (Simplified: showing all consultations of the patient)
+            console.log('📊 Loading payments for cabinet:', this.currentCabinetId);
+            return this.paiementService.getFacturesByCabinet(this.currentCabinetId);
+        }),
+        catchError((error) => {
+            console.error('❌ Error loading data:', error);
+            this.errorMessage = error.message || 'Error loading payments data';
+            
+            // Fallback to localStorage as backup
+            const storedCabinetId = localStorage.getItem('cabinetId');
+            if (storedCabinetId) {
+                console.log('🔄 Trying fallback with stored cabinet ID:', storedCabinetId);
+                this.currentCabinetId = parseInt(storedCabinetId, 10);
+                return this.paiementService.getFacturesByCabinet(this.currentCabinetId!);
+            }
+            
+            return of([]);
+        }),
+        finalize(() => {
+            this.isLoading = false;
+            this.cdr.detectChanges();
+            console.log('🔄 Change detection triggered');
+        })
+    ).subscribe({
+        next: (data) => {
+            console.log('✅ Payments data received:', data);
+            this.payments = data || [];
+            this.filteredPayments = [...this.payments];
+            this.calculateStats();
+            this.dataLoaded = true;
+            console.log(`✅ ${this.payments.length} payments loaded successfully`);
+        },
+        error: (error) => {
+            console.error('❌ Subscription error:', error);
+            this.errorMessage = 'Failed to load payments. Please try again.';
+            this.payments = [];
+            this.filteredPayments = [];
+            this.calculateStats();
         }
-    }
-
-    toggleService(service: any) {
-        const index = this.selectedServices.findIndex(s => s.id === service.id);
-        if (index > -1) {
-            this.selectedServices.splice(index, 1);
-        } else {
-            this.selectedServices.push(service);
+    });
+}
+    // Utility method to get cabinet ID safely
+    private getCabinetId(): number | null {
+        if (this.currentCabinetId) {
+            return this.currentCabinetId;
         }
+        
+        const storedCabinetId = localStorage.getItem('cabinetId');
+        if (storedCabinetId) {
+            return parseInt(storedCabinetId, 10);
+        }
+        
+        return null;
     }
 
-    isServiceSelected(service: any): boolean {
-        return this.selectedServices.some(s => s.id === service.id);
+    calculateStats(): void {
+        this.stats = {
+            total: this.payments.length,
+            pending: this.payments.filter(p => p.statut === 'EN_ATTENTE').length,
+            paid: this.payments.filter(p => p.statut === 'PAYEE').length,
+            cancelled: this.payments.filter(p => p.statut === 'ANNULEE').length,
+            totalAmount: this.payments.reduce((sum, p) => sum + (p.montantTotal || 0), 0),
+            pendingAmount: this.payments
+                .filter(p => p.statut === 'EN_ATTENTE')
+                .reduce((sum, p) => sum + (p.montantTotal || 0), 0),
+            paidAmount: this.payments
+                .filter(p => p.statut === 'PAYEE')
+                .reduce((sum, p) => sum + (p.montantTotal || 0), 0)
+        };
     }
 
-    get currentTotal(): number {
-        return this.consultationBasePrice + this.selectedServices.reduce((acc, s) => acc + s.prix, 0);
+    // Filter methods
+    filterByStatus(status: string): void {
+        this.selectedStatus = status;
+        this.applyFilters();
     }
 
-    processPayment() {
-        if (!this.selectedConsultationId) return;
+    onSearchChange(): void {
+        this.applyFilters();
+    }
 
-        const factureData = {
-            idConsultation: this.selectedConsultationId,
-            notes: "Générée par le secrétariat",
-            services: this.selectedServices.map(s => ({
-                idService: s.id,
-                nomService: s.nomService,
-                prix: s.prix
-            }))
+    applyFilters(): void {
+        let filtered = [...this.payments];
+
+        // Apply status filter
+        if (this.selectedStatus !== 'ALL') {
+            filtered = filtered.filter(p => p.statut === this.selectedStatus);
+        }
+
+        // Apply search filter
+        if (this.searchTerm) {
+            const search = this.searchTerm.toLowerCase();
+            filtered = filtered.filter(p => 
+                p.idFacture?.toString().includes(search) ||
+                p.patientName?.toLowerCase().includes(search) ||
+                p.montantTotal?.toString().includes(search)
+            );
+        }
+
+        this.filteredPayments = filtered;
+    }
+
+    onPaymentCreated(newPayment: any): void {
+        console.log('New payment created:', newPayment);
+        
+        // Ensure the payment has cabinet ID
+        if (!newPayment.idCabinet && this.currentCabinetId) {
+            newPayment.idCabinet = this.currentCabinetId;
+        }
+        
+        this.payments.unshift(newPayment);
+        this.applyFilters();
+        this.calculateStats();
+        alert('Invoice created successfully!');
+    }
+
+    // Modal handlers
+    openPaymentForm(): void {
+        console.log('Opening payment form...');
+        
+        if (!this.currentCabinetId) {
+            console.error('❌ Cannot open payment form: No cabinet ID');
+            this.errorMessage = 'Cabinet information not available. Please refresh.';
+            return;
+        }
+        
+        this.isPaymentFormOpen = true;
+    }
+
+    closePaymentForm(): void {
+        console.log('Closing payment form...');
+        this.isPaymentFormOpen = false;
+    }
+
+    // View bill
+    viewBill(payment: any): void {
+        this.currentBill = payment;
+        this.isBillModalOpen = true;
+    }
+
+    closeBillModal(): void {
+        this.isBillModalOpen = false;
+        this.currentBill = null;
+    }
+
+    // Download PDF
+    downloadPDF(idFacture: number): void {
+        console.log('Downloading PDF for invoice:', idFacture);
+        this.paiementService.generateFacturePDF(idFacture).subscribe({
+            next: (blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `invoice-${idFacture}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            },
+            error: (error) => {
+                console.error('Error downloading PDF:', error);
+                alert('Error downloading invoice PDF.');
+            }
+        });
+    }
+
+    // Update status
+    updateStatus(payment: any, newStatus: string): void {
+        const statusLabels: { [key: string]: string } = {
+            'PAYEE': 'Paid',
+            'EN_ATTENTE': 'Pending',
+            'ANNULEE': 'Cancelled'
         };
 
-        this.paiementService.createFacture(this.selectedConsultationId, factureData).subscribe({
-            next: (newFacture) => {
-                this.isPayModalOpen = false;
-                this.ngOnInit(); // Reload to get updated data and sort
-                this.currentBill = newFacture;
-                this.isBillModalOpen = true;
+        if (confirm(`Are you sure you want to mark this invoice as ${statusLabels[newStatus] || newStatus}?`)) {
+            this.isProcessing = true;
+            this.paiementService.updateFactureStatut(payment.idFacture, newStatus)
+                .pipe(
+                    finalize(() => {
+                        this.isProcessing = false;
+                        this.cdr.detectChanges();
+                    })
+                )
+                .subscribe({
+                next: () => {
+                    payment.statut = newStatus;
+                    if (this.currentBill?.idFacture === payment.idFacture) {
+                        this.currentBill.statut = newStatus;
+                    }
+                    this.calculateStats();
+                    this.applyFilters();
+                    alert('Invoice status updated successfully!');
+                },
+                error: (error) => {
+                    console.error('Error updating status:', error);
+                    alert('Error updating invoice status.');
+                }
+            });
+        }
+    }
+
+    // Delete invoice
+    openDeleteModal(payment: any): void {
+        this.billToDelete = payment;
+        this.isDeleteModalOpen = true;
+    }
+
+    closeDeleteModal(): void {
+        this.isDeleteModalOpen = false;
+        this.billToDelete = null;
+    }
+
+    confirmDelete(): void {
+        if (!this.billToDelete) return;
+
+        this.isProcessing = true;
+        this.paiementService.deleteFacture(this.billToDelete.idFacture)
+            .pipe(
+                finalize(() => {
+                    this.isProcessing = false;
+                    this.cdr.detectChanges();
+                })
+            )
+            .subscribe({
+            next: () => {
+                this.payments = this.payments.filter(p => p.idFacture !== this.billToDelete.idFacture);
+                this.applyFilters();
+                this.calculateStats();
+                this.isDeleteModalOpen = false;
+                this.billToDelete = null;
+                alert('Invoice deleted successfully!');
             },
-            error: (err) => console.error('Error creating facture:', err)
+            error: (error) => {
+                console.error('Error deleting invoice:', error);
+                alert('Error deleting invoice.');
+                this.isDeleteModalOpen = false;
+            }
         });
     }
 
-    printBill() {
-        if (this.currentBill && this.currentBill.idFacture) {
-            this.paiementService.generateFacturePDF(this.currentBill.idFacture).subscribe({
-                next: (blob) => {
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `facture_${this.currentBill.idFacture}.pdf`;
-                    link.click();
-                    // Or open in new tab and print:
-                    // window.open(url, '_blank')?.print();
-                },
-                error: (err) => console.error('Error generating PDF:', err)
-            });
-        }
+    // Refresh data
+    refreshPayments(): void {
+        this.loadData();
+    }
+
+    // Export methods
+    exportToCSV(): void {
+        console.log('Exporting to CSV...');
+        alert('Export feature coming soon!');
+    }
+
+    // Utility methods
+    formatDate(dateString: string): string {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    formatDateTime(dateString: string): string {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    getStatusClass(status: string): string {
+        const statusMap: { [key: string]: string } = {
+            'EN_ATTENTE': 'pending',
+            'PAYEE': 'paid',
+            'ANNULEE': 'cancelled'
+        };
+        return statusMap[status] || 'unknown';
+    }
+
+    getStatusLabel(status: string): string {
+        const labelMap: { [key: string]: string } = {
+            'EN_ATTENTE': 'Pending',
+            'PAYEE': 'Paid',
+            'ANNULEE': 'Cancelled'
+        };
+        return labelMap[status] || status;
+    }
+
+    trackById(index: number, item: any): number {
+        return item.idFacture || index;
     }
 }

@@ -6,9 +6,12 @@ export interface Payment {
     clinicLogo: string;
     clinicName: string;
     creationDate: string;
+    expiryDate?: string;
     paymentDelay: string;
     pricingType: string;
-    status: 'active' | 'expired';
+    amount?: number;
+    status: 'active' | 'expired';  
+    typePeriode?: string;
 }
 
 @Component({
@@ -22,19 +25,33 @@ export class PaymentTableComponent {
     @Input() payments: Payment[] = [];
     @Input() currentPage: number = 1;
     @Input() totalPages: number = 1;
-    @Input() activeFilter: 'all' | 'active' | 'expired' = 'all';
+    @Input() activeFilter: 'all' | 'active' | 'expired' = 'all'; 
 
     @Output() pageChange = new EventEmitter<number>();
-    @Output() filterChange = new EventEmitter<'all' | 'active' | 'expired'>();
+    @Output() filterChange = new EventEmitter<'all' | 'active'  | 'expired'>(); 
 
     showFilterMenu = false;
 
-    getStatusClass(status: 'active' | 'expired'): string {
-        return status === 'active' ? 'status-active' : 'status-expired';
+    getStatusClass(status: 'active' | 'expired'): string { 
+        switch (status) {
+            case 'active':
+                return 'status-active';
+            case 'expired':
+                return 'status-expired';
+            default:
+                return '';
+        }
     }
 
-    getStatusText(status: 'active' | 'expired'): string {
-        return status === 'active' ? 'Active' : 'Expired';
+    getStatusText(status: 'active' | 'expired'): string { 
+        switch (status) {
+            case 'active':
+                return 'Active';
+            case 'expired':
+                return 'Expired';
+            default:
+                return '';
+        }
     }
 
     getPricingTypeText(type: string): string {
@@ -60,8 +77,7 @@ export class PaymentTableComponent {
         this.filterChange.emit(filter);
         this.showFilterMenu = false;
     }
-
-    toggleFilterMenu(): void {
+  toggleFilterMenu(): void {
         this.showFilterMenu = !this.showFilterMenu;
     }
 

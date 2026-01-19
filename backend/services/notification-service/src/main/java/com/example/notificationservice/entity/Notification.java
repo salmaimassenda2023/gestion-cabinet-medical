@@ -1,9 +1,5 @@
 package com.example.notificationservice.entity;
 
-// ============================================
-// 2. entity/Notification.java
-// ============================================
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

@@ -12,7 +12,8 @@
     </div>
 
     <div class="desktop-actions">
-      <button class="btn-primary" (click)="scrollToSection('usertype')">Get Started</button>
+      <!-- Login Button -->
+      <button class="btn-primary" routerLink="/login">Login</button>
     </div>
 
     <!-- Mobile Menu Toggle -->
@@ -28,7 +29,8 @@
         {{ item.label }}
       </a>
       <div class="mobile-actions">
-        <button class="btn-primary full-width" (click)="scrollToSection('usertype')">Get Started</button>
+        <!-- Login Button for mobile -->
+        <button class="btn-secondary full-width" routerLink="/login" (click)="closeMobileMenu()">Login</button>
       </div>
     </div>
   </div>

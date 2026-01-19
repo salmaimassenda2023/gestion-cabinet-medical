@@ -2,7 +2,6 @@ package com.example.consultationservice.client;
 
 import com.example.consultationservice.dto.ServiceConsultationDTO;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 

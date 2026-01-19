@@ -1,12 +1,11 @@
 package com.example.consultationservice.dto;
 
-import com.example.consultationservice.enums.TypeExamenClinique;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 
 @Data
 @Builder
@@ -17,4 +16,6 @@ public class FactureCreateDTO {
 
     private String notes;
 
+    private List<Long> serviceIds;
+    private Double montantTotal;
 }

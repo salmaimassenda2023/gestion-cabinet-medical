@@ -5,7 +5,6 @@ import com.example.consultationservice.entity.Facture;
 import com.example.consultationservice.entity.OrdonnanceExamen;
 import com.example.consultationservice.entity.OrdonnanceMedicament;
 
-import javax.swing.text.Document;
 
 public interface PDFGeneratorService {
 

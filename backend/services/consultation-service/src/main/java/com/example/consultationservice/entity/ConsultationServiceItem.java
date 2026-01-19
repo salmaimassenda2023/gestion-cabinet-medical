@@ -1,4 +1,3 @@
-// Rename the entity from ConsultationService to ConsultationServiceItem
 package com.example.consultationservice.entity;
 
 import jakarta.persistence.*;
@@ -8,12 +7,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "consultation_service")  // Keep table name if needed
+@Table(name = "consultation_service")  
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConsultationServiceItem {  // Renamed!
+public class ConsultationServiceItem {  
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,5 +24,4 @@ public class ConsultationServiceItem {  // Renamed!
     private Long idService;
     private String nomService;
     private Double prix;
-    // other fields...
 }

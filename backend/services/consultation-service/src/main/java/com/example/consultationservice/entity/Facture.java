@@ -17,12 +17,11 @@ public class Facture {
     @Column(name = "id_facture")
     private Long idFacture;
 
-    // Link to consultation (one invoice per consultation)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_consultation", nullable = false, unique = true)
     private Consultation consultation;
 
-    @Column(name = "cabinet_id", nullable = false)
+    @Column(name = "cabinet_id", nullable = true)
     private Long cabinetId;
 
     @Column(name = "montant_total", nullable = false)
@@ -33,7 +32,7 @@ public class Facture {
     private Date dateFacture;
 
     @Column(name = "statut", nullable = false)
-    private String statut; // EN_ATTENTE, PAYEE, ANNULEE
+    private String statut; 
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;

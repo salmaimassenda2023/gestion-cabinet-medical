@@ -1,4 +1,3 @@
-// utilisateur.service.ts (updated)
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
@@ -98,21 +97,21 @@ export class UtilisateurService {
         const id = localStorage.getItem(this.MEDECIN_ID_KEY);
         return id ? parseInt(id, 10) : null;
     }
+    getUtilisateursByRole(role: string): Observable<UtilisateurResponse[]> {
+        return this.http.get<UtilisateurResponse[]>(`${this.baseUrl}${this.path}/role/${role}`);
+    }
 
-    // Get full medecin data
     getMedecinData(): UtilisateurResponse | null {
         const data = localStorage.getItem(this.MEDECIN_STORAGE_KEY);
         return data ? JSON.parse(data) : null;
     }
 
-    // Clear medecin data (on logout or after cabinet creation)
     clearMedecinData(): void {
         localStorage.removeItem(this.MEDECIN_ID_KEY);
         localStorage.removeItem(this.MEDECIN_STORAGE_KEY);
         sessionStorage.removeItem('temp_user_id');
     }
 
-    // Update medecin with cabinet ID after cabinet creation
     updateMedecinWithCabinet(cabinetId: number): void {
         const medecinData = this.getMedecinData();
         if (medecinData) {
@@ -122,8 +121,7 @@ export class UtilisateurService {
             };
             localStorage.setItem(this.MEDECIN_STORAGE_KEY, JSON.stringify(updatedMedecin));
 
-            // Also update in backend if needed
-            this.updateUtilisateur(medecinData.idUtilisateur, { idCabinet: cabinetId }).subscribe({
+            this.updateCabinetId(medecinData.idUtilisateur, cabinetId).subscribe({
                 next: () => console.log('✅ Medecin updated with cabinet ID'),
                 error: (err) => console.error('❌ Failed to update medecin:', err)
             });
@@ -133,6 +131,10 @@ export class UtilisateurService {
     createUtilisateur(request: UtilisateurRequest): Observable<UtilisateurResponse> {
         console.log('📝 Creating user...', request);
         return this.http.post<UtilisateurResponse>(`${this.baseUrl}${this.path}`, request);
+    }
+
+    updateCabinetId(userId: number, cabinetId: number): Observable<void> {
+        return this.http.put<void>(`${this.baseUrl}${this.path}/${userId}/cabinet?idCabinet=${cabinetId}`, {});
     }
 
     getCurrentUser(): Observable<UtilisateurResponse> {

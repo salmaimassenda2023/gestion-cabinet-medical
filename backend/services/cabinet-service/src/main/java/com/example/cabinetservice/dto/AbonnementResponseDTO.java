@@ -19,4 +19,6 @@ public class AbonnementResponseDTO {
     private AbonnementStatus statut;
     private Double montant;
     private String typePeriode;
+    private String cabinetNom;
+    private String cabinetLogo;
 }

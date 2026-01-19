@@ -26,10 +26,15 @@ public class FactureDTO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Africa/Casablanca")
     private Date dateFacture;
 
-    private String statut;  // EN_ATTENTE, PAYEE, ANNULEE
+    private String statut;  
 
     private String notes;
 
-    // List of all services included in this invoice
     private List<ConsultationServiceItemDTO> services;
+
+    private String patientName;
+    private Long idPatient;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Africa/Casablanca")
+    private Date dateConsultation;
 }

@@ -2,7 +2,9 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    padding: 1rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 1.25rem;
 }
 
 .form-group {
@@ -11,62 +13,140 @@
     gap: 0.5rem;
 }
 
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-label {
+.form-group label {
     font-weight: 600;
     color: #1e293b;
     font-size: 0.9rem;
 }
 
-input,
-select,
-textarea {
+.form-group .required {
+    color: #dc3545;
+}
+
+.form-control {
     padding: 0.75rem;
     border-radius: 12px;
     border: 1px solid rgba(142, 195, 212, 0.3);
     background: white;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+.form-control:focus {
     outline: none;
     border-color: #3b9aa9;
     box-shadow: 0 0 0 3px rgba(59, 154, 169, 0.1);
 }
 
-.form-actions {
-    display: flex;
-    align-items: center;
+/* Style for disabled controls */
+.form-control:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Ensure options are visible even when select is disabled */
+.form-control:disabled option {
+    color: #333;
+    background-color: white;
+}
+
+/* Select dropdown with custom arrow */
+select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b9aa9' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    padding-right: 2.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    margin-top: 1rem;
 }
 
-.spacer {
-    flex: 1;
+.error-message {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
 }
 
-.btn-delete {
-    background: transparent;
-    color: #ef4444;
-    border: 1px solid #fee2e2;
-    padding: 0.75rem 1.25rem;
+.info-message {
+    color: #856404;
+    background-color: rgba(255, 243, 205, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 234, 167, 0.5);
+    padding: 0.75rem;
     border-radius: 12px;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.debug-info {
+    background-color: rgba(248, 249, 250, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    color: #6c757d;
+    border-left: 3px solid #3b9aa9;
+}
+
+.debug-info small {
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.status-active {
+    color: #28a745;
     font-weight: 600;
+}
+
+.status-inactive {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.debug-actions {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(248, 249, 250, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px dashed rgba(142, 195, 212, 0.3);
+}
+
+.btn-small {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.btn-delete:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
+.btn-small:hover {
+    background-color: #5a6268;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(142, 195, 212, 0.2);
 }
 
 .btn-primary {
@@ -78,6 +158,17 @@ textarea:focus {
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(59, 154, 169, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 154, 169, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -88,9 +179,243 @@ textarea:focus {
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    transform: translateY(-2px);
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #dc3545 0%, #f28ba1 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.3);
+}
+
+.spacer {
+    flex: 1;
+}
+
+/* Textarea styling */
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+/* Input placeholders */
+.form-control::placeholder {
+    color: #94a3b8;
+    opacity: 1;
+}
+/* Add these styles to your appointment-form.css */
+
+.info-display {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.info-display label {
+    display: block;
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.patient-info-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #212529;
+}
+
+.patient-info-display i {
+    color: #007bff;
+    font-size: 20px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.form-actions .spacer {
+    flex: 1;
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+}
+
+.btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.info-message {
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    color: #856404;
+    font-size: 13px;
+}
+
+.error-message {
+    margin-top: 6px;
+    color: #dc3545;
+    font-size: 13px;
+}
+
+.required {
+    color: #dc3545;
+}
+/* Add these styles to your appointment-form.css */
+
+.info-display {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.info-display label {
+    display: block;
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.patient-info-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #212529;
+}
+
+.patient-info-display i {
+    color: #007bff;
+    font-size: 20px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.form-actions .spacer {
+    flex: 1;
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+}
+
+.btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.info-message {
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    color: #856404;
+    font-size: 13px;
+}
+
+.error-message {
+    margin-top: 6px;
+    color: #dc3545;
+    font-size: 13px;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.status-info {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background-color: #e7f3ff;
+    border-left: 3px solid #007bff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #004085;
+}
+
+.status-info i {
+    color: #007bff;
 }

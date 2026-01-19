@@ -2,7 +2,7 @@ package com.example.notificationservice.dto.abonnement_cabinet;
 
 import com.example.notificationservice.dto.BaseNotificationDTO;
 import lombok.*;
-// Réponse pour le frontend (Admin)
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

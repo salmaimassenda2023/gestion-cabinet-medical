@@ -1,0 +1,309 @@
+<div class="medical-dossier-portal">
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <a [routerLink]="['/doctor']" class="back-btn-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back
+        </a>
+        <div class="section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Medical Dossier
+        </div>
+        <button class="btn-done" (click)="isEditMode ? saveDossier() : toggleEditMode()" 
+                [disabled]="isLoading || isSaving">
+            <i class="fas" [class.fa-edit]="!isEditMode" [class.fa-save]="isEditMode"></i>
+            <span *ngIf="!isEditMode && !isSaving">Edit</span>
+            <span *ngIf="isEditMode && !isSaving">Save</span>
+            <span *ngIf="isSaving">Saving...</span>
+        </button>
+        <button class="btn-cancel" *ngIf="isEditMode" (click)="toggleEditMode()" [disabled]="isSaving">
+            <i class="fas fa-times"></i>
+            Cancel
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p>Loading medical dossier...</p>
+        </div>
+    </div>
+
+    <div class="dossier-layout" *ngIf="!isLoading && patientInfo">
+        <!-- Left Side: Patient Info & Consultation History -->
+        <div class="info-side">
+            <!-- Patient Information Card -->
+            <section class="info-section">
+                <h2>
+                    <i class="fas fa-user-circle"></i>
+                    Patient Information
+                </h2>
+                <div class="info-card">
+                    <div class="patient-header">
+                        <div class="patient-avatar">
+                            <i class="fas fa-user fa-3x"></i>
+                        </div>
+                        <div class="patient-details">
+                            <p class="patient-name">{{ patientInfo.nom }} {{ patientInfo.prenom }}</p>
+                            <div class="patient-meta">
+                                <span class="detail-badge">
+                                    <i class="fas fa-venus-mars"></i>
+                                    {{ patientInfo.sexe === 'M' ? 'Male' : 'Female' }}
+                                </span>
+                                <span class="detail-badge">
+                                    <i class="fas fa-birthday-cake"></i>
+                                    {{ calculateAge(patientInfo.dateNaissance) }} years
+                                </span>
+                                <span class="detail-badge">
+                                    <i class="fas fa-id-card"></i>
+                                    {{ patientInfo.cin }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ patientInfo.telephone || 'N/A' }}</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>{{ patientInfo.email || 'N/A' }}</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{{ patientInfo.adresse || 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Consultation History -->
+            <section class="history-section">
+                <h2>
+                    <i class="fas fa-history"></i>
+                    Consultation History
+                    <span class="badge">{{ consultationHistory.length }}</span>
+                </h2>
+                <div class="history-card">
+                    <div class="history-list" *ngIf="consultationHistory.length > 0">
+                        <div class="history-item" *ngFor="let consultation of consultationHistory">
+                            <div class="history-header">
+                                <span class="history-date">
+                                    <i class="fas fa-calendar"></i>
+                                    {{ consultation.dateConsultation | date:'medium' }}
+                                </span>
+                                <span class="type-tag">Consultation</span>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-diagnostic">
+                                    <strong>Diagnostic:</strong> {{ consultation.diagnostic }}
+                                </div>
+                                <div class="history-observation" *ngIf="consultation.observation">
+                                    <strong>Observation:</strong> {{ consultation.observation }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-history" *ngIf="consultationHistory.length === 0">
+                        <i class="fas fa-notes-medical fa-3x"></i>
+                        <p>No consultation history available</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right Side: Medical Dossier & Documents -->
+        <div class="dossier-side">
+            <!-- Medical Dossier Form -->
+            <section class="dossier-section">
+                <h2>
+                    <i class="fas fa-file-medical-alt"></i>
+                    Medical Dossier
+                </h2>
+                <div class="form-card">
+                    <form [formGroup]="dossierForm">
+                        <div class="form-row">
+                            <div class="input-group">
+                                <label>
+                                    <i class="fas fa-tint"></i>
+                                    Blood Type
+                                </label>
+                                <select formControlName="groupeSanguin" [disabled]="!isEditMode">
+                                    <option value="">Select blood type</option>
+                                    <option *ngFor="let type of bloodTypes" [value]="type">{{ type }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                    <div class="input-group full">
+                        <label>
+                            <i class="fas fa-allergies"></i>
+                            Allergies
+                        </label>
+                        <textarea formControlName="allergies" rows="2" 
+                                  placeholder="List any known allergies..."
+                                  [disabled]="!isEditMode"></textarea>
+                    </div>
+
+                    <div class="input-group full">
+                        <label>
+                            <i class="fas fa-notes-medical"></i>
+                            Medical History
+                        </label>
+                        <textarea formControlName="antecedentsMedicaux" rows="3" 
+                                  placeholder="Previous medical conditions, chronic diseases..."
+                                  [disabled]="!isEditMode"></textarea>
+                    </div>
+
+                    <div class="input-group full">
+                        <label>
+                            <i class="fas fa-procedures"></i>
+                            Surgical History
+                        </label>
+                        <textarea formControlName="antecedentsChirurgicaux" rows="3" 
+                                  placeholder="Previous surgeries and interventions..."
+                                  [disabled]="!isEditMode"></textarea>
+                    </div>
+
+                    <div class="input-group full">
+                        <label>
+                            <i class="fas fa-pills"></i>
+                            Current Treatments
+                        </label>
+                        <textarea formControlName="traitementsEnCours" rows="3" 
+                                  placeholder="Ongoing medications and treatments..."
+                                  [disabled]="!isEditMode"></textarea>
+                    </div>
+
+                    <div class="input-group full">
+                        <label>
+                            <i class="fas fa-heartbeat"></i>
+                            Lifestyle & Habits
+                        </label>
+                        <textarea formControlName="habitudesDeVie" rows="3" 
+                                  placeholder="Smoking, alcohol, exercise, diet..."
+                                  [disabled]="!isEditMode"></textarea>
+                    </div>
+
+                        <div class="input-group full">
+                            <label>
+                                <i class="fas fa-comment-medical"></i>
+                                Additional Remarks
+                            </label>
+                            <textarea formControlName="remarques" rows="3" 
+                                      placeholder="Any additional notes or remarks..."
+                                      [disabled]="!isEditMode"></textarea>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Medical Documents -->
+            <section class="documents-section">
+                <h2>
+                    <i class="fas fa-folder-open"></i>
+                    Medical Documents
+                    <span class="badge">{{ documents.length }}</span>
+                </h2>
+
+                <!-- Upload Document Card -->
+                <div class="upload-card">
+                    <div class="upload-header">
+                        <h3>
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            Upload New Document
+                        </h3>
+                    </div>
+                    <div class="upload-body">
+                        <!-- In your template, update the upload section -->
+<div class="upload-form" [formGroup]="documentUploadForm">
+    <div class="file-input-wrapper">
+        <input type="file" 
+               id="fileInput"
+               (change)="onFileSelected($event)"
+               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+               [disabled]="isUploadingDocument">
+        <label for="fileInput" class="file-input-label">
+            <i class="fas fa-paperclip"></i>
+            <span *ngIf="!selectedFile">Choose file</span>
+            <span *ngIf="selectedFile">{{ selectedFile.name }}</span>
+        </label>
+    </div>
+
+    <!-- Use formControlName with the documentUploadForm -->
+    <select formControlName="typeDocument"
+            class="doc-type-select"
+            [disabled]="isUploadingDocument">
+        <option *ngFor="let type of documentTypes" [value]="type.value">
+            {{ type.label }}
+        </option>
+    </select>
+
+    <button class="btn-upload" 
+            (click)="uploadDocument()"
+            [disabled]="!selectedFile || isUploadingDocument">
+        <i class="fas" [class.fa-upload]="!isUploadingDocument" 
+           [class.fa-spinner]="isUploadingDocument"
+           [class.fa-spin]="isUploadingDocument"></i>
+        <span *ngIf="!isUploadingDocument">Upload</span>
+        <span *ngIf="isUploadingDocument">Uploading...</span>
+    </button>
+</div>
+                        <p class="upload-hint">
+                            <i class="fas fa-info-circle"></i>
+                            Supported formats: PDF, JPG, PNG, DOC, DOCX (Max: 10MB)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Documents List -->
+                <div class="documents-card">
+                    <div class="documents-grid" *ngIf="documents.length > 0">
+                        <div class="document-item" *ngFor="let doc of documents">
+                            <div class="doc-icon-wrapper">
+                                <i class="fas {{ getDocumentIcon(doc.type) }} fa-2x"></i>
+                            </div>
+                            <div class="doc-info">
+                                <div class="doc-name" [title]="doc.nom">{{ doc.nom }}</div>
+                                <div class="doc-meta">
+                                    <span class="doc-type-badge">{{ doc.type }}</span>
+                                    <span class="doc-size">{{ formatFileSize(doc.tailleOctets) }}</span>
+                                </div>
+                                <div class="doc-date">
+                                    <i class="fas fa-clock"></i>
+                                    {{ doc.dateUpload | date:'short' }}
+                                </div>
+                            </div>
+                            <div class="doc-actions">
+                                <button class="btn-action btn-view" 
+                                        (click)="downloadDocument(doc)"
+                                        title="View/Download">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-action btn-delete" 
+                                        (click)="deleteDocument(doc.idDocument)"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-documents" *ngIf="documents.length === 0">
+                        <i class="fas fa-folder-open fa-3x"></i>
+                        <p>No documents uploaded yet</p>
+                        <p class="hint">Upload medical reports, lab results, or imaging files</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

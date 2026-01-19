@@ -24,11 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
-/**
- * Implémentation du service de consultation
- * Responsabilité: Orchestrer la logique métier et coordonner les repositories
- * Principe SOLID: Single Responsibility - chaque méthode a un objectif clair
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -51,7 +47,6 @@ public class ConsultationServiceImpl implements ConsultationService {
     private final PatientServiceClient patientServiceClient;
     private final PDFGeneratorService pdfGeneratorService;
 
-
     @Override
     @Transactional
     public ConsultationResponseDTO createConsultation(ConsultationCreateDTO dto) throws ServiceValidationException {
@@ -66,7 +61,7 @@ public class ConsultationServiceImpl implements ConsultationService {
         // STEP 3: Create Consultation Entity
         Consultation consultation = consultationMapper.toEntity(dto);
         consultation.setDateConsultation(new Date());
-        consultation.setConsultationServices(new ArrayList<>());  // Updated
+        consultation.setConsultationServices(new ArrayList<>()); 
 
         // STEP 4: Process Each Service
         List<ConsultationServiceItem> consultationServices = new ArrayList<>();
@@ -76,8 +71,7 @@ public class ConsultationServiceImpl implements ConsultationService {
             // Fetch service details
             ServiceConsultationDTO serviceDetails = validateAndGetService(
                     dto.getIdCabinet(),
-                    serviceDTO.getIdService()
-            );
+                    serviceDTO.getIdService());
 
             // Create ConsultationServiceItem entity
             ConsultationServiceItem consultationService = ConsultationServiceItem.builder()
@@ -91,8 +85,8 @@ public class ConsultationServiceImpl implements ConsultationService {
             montantTotal += serviceDetails.getPrix();
         }
 
-        consultation.setConsultationServices(consultationServices);  // Updated
-        consultation.setMontantTotal(montantTotal);  // Set total
+        consultation.setConsultationServices(consultationServices); 
+        consultation.setMontantTotal(montantTotal); 
 
         // STEP 5: Save Consultation
         Consultation savedConsultation = consultationRepository.save(consultation);
@@ -261,35 +255,64 @@ public class ConsultationServiceImpl implements ConsultationService {
 
     @Override
     public FactureDTO createFacture(Long consultationId, FactureCreateDTO dto) throws ServiceValidationException {
-        log.info("🧾 Création de facture pour consultation ID: {}", consultationId);
+        log.info("Création de facture pour consultation ID: {}", consultationId);
 
-        // 1. Find the consultation with all its services
+        // 1. Find the consultation
         Consultation consultation = findConsultationById(consultationId);
 
-        // 2. Verify consultation has services
-        if (consultation.getConsultationServices() == null ||
-                consultation.getConsultationServices().isEmpty()) {
-            log.error("❌ Consultation {} n'a aucun service", consultationId);
+        log.info("Consultation trouvée - Cabinet ID: {}", consultation.getIdCabinet());
+
+        // 2. Determine the total amount
+        Double montantTotal;
+
+        // If services are provided and cabinet exists, validate and add them
+        if (dto.getServiceIds() != null && !dto.getServiceIds().isEmpty() && consultation.getIdCabinet() != null) {
+            log.info("Mise à jour des services pour la consultation {}", consultationId);
+
+            if (consultation.getConsultationServices() == null) {
+                consultation.setConsultationServices(new ArrayList<>());
+            } else {
+                consultation.getConsultationServices().clear();
+            }
+
+            double serviceTotal = 0.0;
+            for (Long serviceId : dto.getServiceIds()) {
+                ServiceConsultationDTO serviceDetails = validateAndGetService(
+                        consultation.getIdCabinet(),
+                        serviceId);
+
+                ConsultationServiceItem item = ConsultationServiceItem.builder()
+                        .consultation(consultation)
+                        .idService(serviceId)
+                        .nomService(serviceDetails.getNomService())
+                        .prix(serviceDetails.getPrix())
+                        .build();
+
+                consultation.getConsultationServices().add(item);
+                serviceTotal += serviceDetails.getPrix();
+            }
+            consultation.setMontantTotal(serviceTotal);
+            consultation = consultationRepository.save(consultation);
+            montantTotal = serviceTotal;
+        } else if (dto.getMontantTotal() != null && dto.getMontantTotal() > 0) {
+            log.info("Utilisation du montant total fourni: {} MAD", dto.getMontantTotal());
+            montantTotal = dto.getMontantTotal();
+            consultation.setMontantTotal(montantTotal);
+            consultation = consultationRepository.save(consultation);
+        } else if (consultation.getMontantTotal() != null && consultation.getMontantTotal() > 0) {
+            montantTotal = consultation.getMontantTotal();
+        } else {
+            log.error("Montant total invalide pour consultation {}", consultationId);
             throw new ServiceValidationException(
-                    "Impossible de créer une facture pour une consultation sans services");
+                    "Le montant total de la consultation est invalide. Veuillez spécifier un montant.");
         }
 
-        // 3. Use the total amount already calculated in the consultation
-        Double montantTotal = consultation.getMontantTotal();
+        log.info("Montant total final: {} MAD", montantTotal);
 
-        if (montantTotal == null || montantTotal <= 0) {
-            log.error("❌ Montant total invalide pour consultation {}", consultationId);
-            throw new ServiceValidationException(
-                    "Le montant total de la consultation est invalide");
-        }
-
-        log.info("📋 Consultation trouvée avec {} service(s) - Montant total: {} MAD",
-                consultation.getConsultationServices().size(), montantTotal);
-
-        // 4. Create facture for the entire consultation
+        // 3. Create facture for the consultation
         Facture facture = Facture.builder()
                 .consultation(consultation)
-                .cabinetId(consultation.getIdCabinet())
+                .cabinetId(consultation.getIdCabinet()) 
                 .montantTotal(montantTotal)
                 .dateFacture(new Date())
                 .statut(dto.getStatut() != null ? dto.getStatut() : "EN_ATTENTE")
@@ -298,11 +321,10 @@ public class ConsultationServiceImpl implements ConsultationService {
 
         Facture saved = factureRepository.save(facture);
 
-        log.info("✅ Facture créée avec succès:");
+        log.info("Facture créée avec succès:");
         log.info("   - ID Facture: {}", saved.getIdFacture());
         log.info("   - Consultation: {}", consultationId);
         log.info("   - Montant total: {} MAD", saved.getMontantTotal());
-        log.info("   - Nombre de services: {}", consultation.getConsultationServices().size());
         log.info("   - Statut: {}", saved.getStatut());
 
         return factureMapper.toDTO(saved);
@@ -323,8 +345,8 @@ public class ConsultationServiceImpl implements ConsultationService {
         Facture facture = factureRepository.findById(idFacture)
                 .orElseThrow(() -> new ResourceNotFoundException("Facture non trouvée: " + idFacture));
 
-        // Récupérer les infos du patient
-        ConsultationPatientResponseDTO patient = patientServiceClient.getPatient(facture.getConsultation().getIdPatient());
+        ConsultationPatientResponseDTO patient = patientServiceClient
+                .getPatient(facture.getConsultation().getIdPatient());
 
         return pdfGeneratorService.generateFacturePDF(facture, patient);
     }
@@ -341,13 +363,13 @@ public class ConsultationServiceImpl implements ConsultationService {
         return factureMapper.toDTO(updated);
     }
 
-
     // ============ Méthodes utilitaires privées ============
 
     private Consultation findConsultationById(Long id) {
         return consultationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Consultation non trouvée avec l'ID: " + id));
     }
+
     /**
      * Validates that the patient exists by calling patient-service
      */
@@ -408,7 +430,8 @@ public class ConsultationServiceImpl implements ConsultationService {
     /**
      * Validates and retrieves service details from cabinet-service
      */
-    private ServiceConsultationDTO validateAndGetService(Long idCabinet, Long idService) throws ServiceValidationException {
+    private ServiceConsultationDTO validateAndGetService(Long idCabinet, Long idService)
+            throws ServiceValidationException {
         log.debug("Récupération du service ID: {} du cabinet ID: {}", idService, idCabinet);
 
         try {
@@ -444,22 +467,50 @@ public class ConsultationServiceImpl implements ConsultationService {
         }
     }
 
-    /**
-     * Creates a ConsultationService entity with cached service details
-     */
-    private ConsultationServiceItem createConsultationService(  // Updated
-                                                                Consultation consultation,
-                                                                ServiceConsultationDTO serviceDTO,
-                                                                ServiceConsultationDTO serviceDetails) {
+   
 
-        ConsultationServiceItem consultationService = ConsultationServiceItem.builder()  // Updated
-                .consultation(consultation)
-                .idService(serviceDTO.getIdService())
-                .nomService(serviceDetails.getNomService())
-                .prix(serviceDetails.getPrix())
-                .build();
+    @Override
+    @Transactional(readOnly = true)
+    public List<FactureDTO> getAllFacturesByCabinet(Long cabinetId) {
+        log.info("Récupération de toutes les factures du cabinet ID: {}", cabinetId);
 
-        return consultationService;
+        List<Facture> factures = factureRepository.findByCabinetIdOrderByDateFactureDesc(cabinetId);
+
+        log.info("{} facture(s) trouvée(s) pour le cabinet {}", factures.size(), cabinetId);
+
+        return factures.stream()
+                .map(factureMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FactureDTO> getAllFacturesByCabinetWithDetails(Long cabinetId) {
+        log.info("Récupération des factures avec détails du cabinet ID: {}", cabinetId);
+
+        List<Facture> factures = factureRepository.findByCabinetIdWithDetails(cabinetId);
+
+        log.info("{} facture(s) trouvée(s)", factures.size());
+
+        // Map factures and add patient names
+        return factures.stream()
+                .map(facture -> {
+                    try {
+                        // Get patient information
+                        ConsultationPatientResponseDTO patient = patientServiceClient
+                                .getPatient(facture.getConsultation().getIdPatient());
+
+                        String patientName = patient.getPrenom() + " " + patient.getNom();
+
+                        return factureMapper.toDTOWithPatientName(facture, patientName);
+                    } catch (Exception e) {
+                        log.warn("Erreur lors de la récupération du patient pour facture {}: {}",
+                                facture.getIdFacture(), e.getMessage());
+                        // Return DTO without patient name
+                        return factureMapper.toDTO(facture);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
 }

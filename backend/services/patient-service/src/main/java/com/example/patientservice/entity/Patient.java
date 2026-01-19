@@ -37,7 +37,7 @@ public class Patient {
     private LocalDate dateNaissance;
 
     @Column(nullable = false, length = 1)
-    private String sexe; // M ou F
+    private String sexe; 
 
     @Column(name = "telephone", length = 20)
     private String telephone;

@@ -73,7 +73,6 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   logout(): void {
-    // In a real app, logic to clear tokens would go here
     console.log('Logging out...');
     window.location.href = '/login';
   }

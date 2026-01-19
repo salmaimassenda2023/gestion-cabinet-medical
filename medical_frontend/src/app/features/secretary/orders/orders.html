@@ -1,70 +1,165 @@
 <div class="orders-container">
-    <div class="orders-header">
-        <div class="header-info">
-            <h1>Daily Order Queue</h1>
-            <div class="medecin-selector-wrapper">
-                <select [value]="selectedMedecinId" (change)="onMedecinChange($event)" *ngIf="medecins.length > 0"
-                    class="medecin-select">
-                    <option *ngFor="let m of medecins" [value]="m.idUtilisateur">Dr. {{ m.nom }}</option>
-                </select>
-                <p>{{ waitingList.length }} Patients waiting in line</p>
-            </div>
-        </div>
-        <button class="btn-next" (click)='onNext()' [disabled]="!nextPatient">
-            Next Patient <i class="fas fa-chevron-right"></i>
-        </button>
+    
+    <!-- Loading State -->
+    <div *ngIf="isLoading && !dataLoaded" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading appointments data...</p>
     </div>
 
-    <div class="current-patient-card" *ngIf="nextPatient">
-        <div class="status-badge">NEXT PATIENT TO ENTER</div>
-        <div class="patient-details">
-            <div class="avatar LARGE">{{ nextPatient.patientName?.charAt(0) }}</div>
-            <div class="info">
-                <h2>{{ nextPatient.patientName }}</h2>
-                <span>Order #{{ nextPatient.ordrePassage }} • Arrived at {{ nextPatient.heureArrivee | date:'HH:mm'
-                    }}</span>
-                <span class="motif-tag">{{ nextPatient.motif }}</span>
-            </div>
-        </div>
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !isLoading && !dataLoaded" class="error-state">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>{{ errorMessage }}</p>
+        <button (click)="loadData()" class="btn-retry">Try Again</button>
     </div>
 
-    <div class="queue-layout">
-        <div class="queue-section main">
-            <h3>Active Waiting List</h3>
-            <div class="order-list">
-                <div *ngFor="let order of waitingList" class="order-item" [class.next]="order.id === nextPatient?.id">
-                    <div class="order-num">#{{ order.ordrePassage }}</div>
-                    <div class="patient-info">
-                        <span class="name">{{ order.patientName }}</span>
-                        <span class="time">Arrived: {{ order.heureArrivee | date:'HH:mm' }}</span>
-                    </div>
-                    <div class="status">
-                        <span class="status-tag PRESENT">WAITING</span>
-                    </div>
+    <!-- Main Content -->
+    <div *ngIf="!isLoading && dataLoaded" class="main-content">
+        
+        <!-- Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-users"></i>
+                    Queue Management
+                </h1>
+                <p class="subtitle">Manage patient flow and consultations</p>
+            </div>
+            <button 
+                class="btn-call-next" 
+                (click)="callNextPatient()" 
+                [disabled]="isCallButtonDisabled"
+                [class.processing]="isProcessing">
+                <i class="fas" 
+                   [class.fa-check-circle]="currentConsultation"
+                   [class.fa-arrow-right]="!currentConsultation"></i>
+                <span>{{ callButtonText }}</span>
+                <div class="btn-badge" *ngIf="waitingList.length > 0 && !currentConsultation">
+                    {{ waitingList.length }}
                 </div>
-                <div class="no-patients" *ngIf="waitingList.length === 0">
-                    No patients currently waiting.
+            </button>
+        </div>
+
+        <!-- Current Consultation Card -->
+        <div class="current-consultation-card" *ngIf="currentConsultation">
+            <div class="consultation-header">
+                <div class="pulse-indicator"></div>
+                <span class="consultation-label">IN CONSULTATION</span>
+            </div>
+            <div class="consultation-body">
+                <div class="patient-avatar">
+                    {{ currentConsultation.patientName?.charAt(0) || 'P' }}
+                </div>
+                <div class="patient-info">
+                    <h2>{{ currentConsultation.patientName }}</h2>
+                    <div class="info-row">
+                        <span class="info-item">
+                            <i class="fas fa-hashtag"></i>
+                            Order {{ currentConsultation.ordrePassage }}
+                        </span>
+                        <span class="info-item">
+                            <i class="fas fa-clock"></i>
+                            {{ formatTime(currentConsultation.heureArrivee) }}
+                        </span>
+                        <span class="info-item">
+                            <i class="fas fa-stethoscope"></i>
+                            {{ currentConsultation.motif }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="queue-section sidebar">
-            <h3>Today's Appointments</h3>
-            <div class="scheduled-list">
-                <div *ngFor="let appt of todayAppointments" class="scheduled-item">
-                    <div class="appt-time">{{ appt.heureRdv }}</div>
-                    <div class="appt-details">
-                        <span class="name">{{ appt.patientName }}</span>
-                        <span class="type">{{ appt.motif }}</span>
-                    </div>
-                    <button class="btn-arrived" (click)="markAsArrived(appt)">
-                        <i class="fas fa-check"></i> Arrived
-                    </button>
+        <!-- No Current Consultation -->
+        <div class="empty-consultation-card" *ngIf="!currentConsultation">
+            <i class="fas fa-user-md"></i>
+            <p>No patient currently in consultation</p>
+            <span class="hint" *ngIf="waitingList.length > 0">
+                Click "Call Next Patient" to start
+            </span>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="queue-grid">
+            
+            <!-- Waiting List Section -->
+            <div class="queue-section waiting-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-list"></i>
+                        Waiting List
+                    </h3>
+                    <span class="count-badge">{{ waitingList.length }}</span>
                 </div>
-                <div class="no-patients" *ngIf="todayAppointments.length === 0">
-                    No more appointments for today.
+                
+                <div class="waiting-list">
+                    <div 
+                        *ngFor="let patient of waitingList; let i = index" 
+                        class="waiting-item"
+                        [class.next-patient]="i === 0 && !currentConsultation">
+                        <div class="item-order">
+                            <span class="order-number">{{ patient.ordrePassage }}</span>
+                            <span class="next-badge" *ngIf="i === 0 && !currentConsultation">NEXT</span>
+                        </div>
+                        <div class="item-details">
+                            <h4>{{ patient.patientName }}</h4>
+                            <div class="item-meta">
+                                <span>
+                                    <i class="fas fa-clock"></i>
+                                    Arrived: {{ formatTime(patient.heureArrivee) }}
+                                </span>
+                                <span class="motif-tag">{{ patient.motif }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="empty-state" *ngIf="waitingList.length === 0">
+                        <i class="fas fa-inbox"></i>
+                        <p>No patients waiting</p>
+                        <span class="hint">Patients will appear here when marked as arrived</span>
+                    </div>
                 </div>
             </div>
+
+            <!-- Confirmed Appointments Section -->
+            <div class="queue-section confirmed-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-calendar-check"></i>
+                        Today's Confirmed
+                    </h3>
+                    <span class="count-badge">{{ confirmedAppointments.length }}</span>
+                </div>
+                
+                <div class="confirmed-list">
+                    <div 
+                        *ngFor="let appt of confirmedAppointments" 
+                        class="confirmed-item"
+                        (click)="markAsArrived(appt)"
+                        [class.processing]="isProcessing">
+                        <div class="item-time">
+                            <i class="fas fa-clock"></i>
+                            {{ formatTime(appt.heureRdv) }}
+                        </div>
+                        <div class="item-details">
+                            <h4>{{ appt.patientName }}</h4>
+                            <span class="item-type">{{ appt.motif }}</span>
+                        </div>
+                        <button class="btn-mark-arrived" [disabled]="isProcessing">
+                            <i class="fas fa-check"></i>
+                            <span>Arrived</span>
+                        </button>
+                    </div>
+                    
+                    <div class="empty-state" *ngIf="confirmedAppointments.length === 0">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>No confirmed appointments</p>
+                        <span class="hint">Confirmed appointments for today will appear here</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
     </div>
 </div>

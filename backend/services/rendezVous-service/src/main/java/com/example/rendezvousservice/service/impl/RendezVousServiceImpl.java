@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Implémentation simplifiée du service de gestion des rendez-vous.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -40,9 +37,11 @@ public class RendezVousServiceImpl implements IRendezVousService {
 
     // ========== CRUD Rendez-vous ==========
 
+    // Update the createRendezVous method in RendezVousServiceImpl
+
     @Override
     public RendezVousDTO createRendezVous(CreateRendezVousDTO dto) {
-        log.info("📝 Création d'un nouveau rendez-vous pour le patient ID: {}", dto.getIdPatient());
+        log.info("Création d'un nouveau rendez-vous pour le patient ID: {}", dto.getIdPatient());
 
         // 1. Vérifier la disponibilité du créneau
         repository.findByMedecinAndDateAndHeure(
@@ -51,29 +50,29 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 dto.getHeureRdv(),
                 StatutRendezVous.ANNULE,
                 StatutRendezVous.TERMINE).ifPresent(rdv -> {
-                    log.warn("⚠️ Créneau déjà occupé: {} à {}", dto.getDateRdv(), dto.getHeureRdv());
+                    log.warn("Créneau déjà occupé: {} à {}", dto.getDateRdv(), dto.getHeureRdv());
                     throw new RendezVousException("Ce créneau est déjà occupé");
                 });
 
         // 2. Vérifier que le patient existe
         PatientInfoDTO patientInfo = patientClient.getPatientInfo(dto.getIdPatient());
         if (patientInfo == null || patientInfo.getNom().contains("indisponible")) {
-            log.error("❌ Patient introuvable: ID {}", dto.getIdPatient());
+            log.error("Patient introuvable: ID {}", dto.getIdPatient());
             throw new RendezVousException("Patient introuvable avec l'ID: " + dto.getIdPatient());
         }
 
-        // 3. Créer le rendez-vous
+        // 3. Créer le rendez-vous avec statut PLANIFIE
         RendezVous rendezVous = RendezVous.builder()
                 .idPatient(dto.getIdPatient())
                 .idMedecin(dto.getIdMedecin())
                 .dateRdv(dto.getDateRdv())
                 .heureRdv(dto.getHeureRdv())
                 .motif(dto.getMotif())
-                .statut(StatutRendezVous.CONFIRME)
+                .statut(StatutRendezVous.PLANIFIE)
                 .build();
 
         RendezVous saved = repository.save(rendezVous);
-        log.info("✅ Rendez-vous créé avec succès - ID: {}", saved.getId());
+        log.info("Rendez-vous créé avec succès - ID: {}, Statut: PLANIFIE", saved.getId());
 
         return toDTO(saved);
     }
@@ -81,11 +80,11 @@ public class RendezVousServiceImpl implements IRendezVousService {
     @Override
     @Transactional(readOnly = true)
     public RendezVousDTO getRendezVous(Long id) {
-        log.info("📖 Récupération du rendez-vous ID: {}", id);
+        log.info("Récupération du rendez-vous ID: {}", id);
 
         RendezVous rendezVous = repository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("❌ Rendez-vous introuvable: ID {}", id);
+                    log.error("Rendez-vous introuvable: ID {}", id);
                     return new RendezVousException("Rendez-vous introuvable avec l'ID: " + id);
                 });
 
@@ -94,18 +93,18 @@ public class RendezVousServiceImpl implements IRendezVousService {
 
     @Override
     public RendezVousDTO updateRendezVous(Long id, UpdateRendezVousDTO dto) {
-        log.info("✏️ Mise à jour du rendez-vous ID: {}", id);
+        log.info("Mise à jour du rendez-vous ID: {}", id);
 
         // 1. Récupérer le rendez-vous existant
         RendezVous rendezVous = repository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("❌ Rendez-vous introuvable: ID {}", id);
+                    log.error("Rendez-vous introuvable: ID {}", id);
                     return new RendezVousException("Rendez-vous introuvable avec l'ID: " + id);
                 });
 
         // 2. Vérifier que le rendez-vous peut être modifié
         if (!rendezVous.peutEtreModifie()) {
-            log.warn("⚠️ Tentative de modification d'un RDV terminé ou annulé: ID {}", id);
+            log.warn("Tentative de modification d'un RDV terminé ou annulé: ID {}", id);
             throw new RendezVousException("Ce rendez-vous ne peut plus être modifié (statut: " +
                     rendezVous.getStatut() + ")");
         }
@@ -122,57 +121,57 @@ public class RendezVousServiceImpl implements IRendezVousService {
                     StatutRendezVous.ANNULE,
                     StatutRendezVous.TERMINE).ifPresent(existing -> {
                         if (!existing.getId().equals(id)) {
-                            log.warn("⚠️ Nouveau créneau déjà occupé: {} à {}", nouvelleDate, nouvelleHeure);
+                            log.warn("Nouveau créneau déjà occupé: {} à {}", nouvelleDate, nouvelleHeure);
                             throw new RendezVousException("Ce créneau est déjà occupé");
                         }
                     });
 
             rendezVous.setDateRdv(nouvelleDate);
             rendezVous.setHeureRdv(nouvelleHeure);
-            log.info("📅 Créneau modifié: {} à {}", nouvelleDate, nouvelleHeure);
+            log.info("Créneau modifié: {} à {}", nouvelleDate, nouvelleHeure);
         }
 
         // 4. Mettre à jour les autres champs
         if (dto.getMotif() != null) {
             rendezVous.setMotif(dto.getMotif());
-            log.info("📋 Motif modifié: {}", dto.getMotif());
+            log.info("Motif modifié: {}", dto.getMotif());
         }
 
         // 5. Sauvegarder les modifications
         RendezVous updated = repository.save(rendezVous);
-        log.info("✅ Rendez-vous mis à jour avec succès");
+        log.info("Rendez-vous mis à jour avec succès");
 
         return toDTO(updated);
     }
 
     @Override
     public void deleteRendezVous(Long id) {
-        log.info("🗑️ Annulation du rendez-vous ID: {}", id);
+        log.info("Annulation du rendez-vous ID: {}", id);
 
         RendezVous rendezVous = repository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("❌ Rendez-vous introuvable: ID {}", id);
+                    log.error("Rendez-vous introuvable: ID {}", id);
                     return new RendezVousException("Rendez-vous introuvable avec l'ID: " + id);
                 });
 
         if (!rendezVous.peutEtreAnnule()) {
-            log.warn("⚠️ Tentative d'annulation d'un RDV non annulable: ID {}", id);
+            log.warn("Tentative d'annulation d'un RDV non annulable: ID {}", id);
             throw new RendezVousException("Ce rendez-vous ne peut pas être annulé (statut: " +
                     rendezVous.getStatut() + ")");
         }
 
         rendezVous.annuler();
         repository.save(rendezVous);
-        log.info("✅ Rendez-vous annulé avec succès");
+        log.info("Rendez-vous annulé avec succès");
     }
 
     @Override
     public RendezVousDTO changeStatut(Long id, ChangeStatutDTO dto) {
-        log.info("🔄 Changement de statut du rendez-vous ID: {} vers {}", id, dto.getStatut());
+        log.info("Changement de statut du rendez-vous ID: {} vers {}", id, dto.getStatut());
 
         RendezVous rendezVous = repository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("❌ Rendez-vous introuvable: ID {}", id);
+                    log.error("Rendez-vous introuvable: ID {}", id);
                     return new RendezVousException("Rendez-vous introuvable avec l'ID: " + id);
                 });
 
@@ -180,9 +179,9 @@ public class RendezVousServiceImpl implements IRendezVousService {
         rendezVous.setStatut(dto.getStatut());
 
         RendezVous updated = repository.save(rendezVous);
-        log.info("✅ Statut changé de {} à {}", ancienStatut, dto.getStatut());
+        log.info("Statut changé de {} à {}", ancienStatut, dto.getStatut());
 
-        // ⭐ NOTIFICATION UNIQUEMENT SI PASSAGE EN CONSULTATION ⭐
+        //NOTIFICATION UNIQUEMENT SI PASSAGE EN CONSULTATION
         if (dto.getStatut() == StatutRendezVous.EN_CONSULTATION) {
             notifierMedecinPatientSuivant(updated.getIdMedecin(), updated.getDateRdv());
         }
@@ -201,7 +200,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 patientId,
                 StatutRendezVous.ANNULE);
 
-        log.info("📊 {} rendez-vous trouvés pour le patient ID: {}", rendezVousList.size(), patientId);
+        log.info("{} rendez-vous trouvés pour le patient ID: {}", rendezVousList.size(), patientId);
 
         return rendezVousList.stream()
                 .map(this::toDTO)
@@ -211,14 +210,14 @@ public class RendezVousServiceImpl implements IRendezVousService {
     @Override
     @Transactional(readOnly = true)
     public List<RendezVousDTO> getRendezVousByMedecinAndDate(Long medecinId, LocalDate date) {
-        log.info("🔍 Recherche des rendez-vous du médecin ID: {} pour le {}", medecinId, date);
+        log.info("Recherche des rendez-vous du médecin ID: {} pour le {}", medecinId, date);
 
         List<RendezVous> rendezVousList = repository.findByIdMedecinAndDateRdvAndStatutNot(
                 medecinId,
                 date,
                 StatutRendezVous.ANNULE);
 
-        log.info("📊 {} rendez-vous trouvés pour le médecin ID: {} le {}",
+        log.info("{} rendez-vous trouvés pour le médecin ID: {} le {}",
                 rendezVousList.size(), medecinId, date);
 
         return rendezVousList.stream()
@@ -230,7 +229,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
     @Transactional(readOnly = true)
     public List<RendezVousDTO> getRendezVousDuJour(Long medecinId) {
         LocalDate aujourdhui = LocalDate.now();
-        log.info("📅 Récupération des rendez-vous du jour ({}) pour le médecin ID: {}",
+        log.info("Récupération des rendez-vous du jour ({}) pour le médecin ID: {}",
                 aujourdhui, medecinId);
 
         List<RendezVous> rendezVousList = repository.findRendezVousDuJour(
@@ -239,7 +238,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 StatutRendezVous.ANNULE,
                 StatutRendezVous.TERMINE);
 
-        log.info("📊 {} rendez-vous aujourd'hui pour le médecin ID: {}",
+        log.info("{} rendez-vous aujourd'hui pour le médecin ID: {}",
                 rendezVousList.size(), medecinId);
 
         return rendezVousList.stream()
@@ -252,7 +251,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
     @Override
     @Transactional(readOnly = true)
     public DisponibilitesDTO getDisponibilites(Long medecinId, LocalDate date) {
-        log.info("📋 Recherche des disponibilités du médecin ID: {} pour le {}", medecinId, date);
+        log.info("Recherche des disponibilités du médecin ID: {} pour le {}", medecinId, date);
 
         LocalTime heureDebut = LocalTime.of(8, 0);
         LocalTime heureFin = LocalTime.of(18, 0);
@@ -283,7 +282,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
             heureCourante = heureCourante.plusMinutes(intervalleMinutes);
         }
 
-        log.info("📊 {} créneaux disponibles sur {}", creneauxDisponibles, creneaux.size());
+        log.info("{} créneaux disponibles sur {}", creneauxDisponibles, creneaux.size());
 
         return DisponibilitesDTO.builder()
                 .idMedecin(medecinId)
@@ -298,7 +297,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
     @Transactional(readOnly = true)
     public List<RendezVousDTO> getListeAttente(Long medecinId) {
         LocalDate aujourdhui = LocalDate.now();
-        log.info("📝 Récupération de la liste d'attente du médecin ID: {} pour le {}",
+        log.info("Récupération de la liste d'attente du médecin ID: {} pour le {}",
                 medecinId, aujourdhui);
 
         List<RendezVous> listeAttente = repository.findListeAttenteByMedecinAndDate(
@@ -306,7 +305,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 aujourdhui,
                 StatutRendezVous.PRESENT);
 
-        log.info("📊 {} patients dans la liste d'attente", listeAttente.size());
+        log.info("{} patients dans la liste d'attente", listeAttente.size());
 
         return listeAttente.stream()
                 .map(this::toDTO)
@@ -315,16 +314,16 @@ public class RendezVousServiceImpl implements IRendezVousService {
 
     @Override
     public RendezVousDTO ajouterEnListeAttente(Long rendezVousId) {
-        log.info("➕ Ajout du rendez-vous ID: {} à la liste d'attente", rendezVousId);
+        log.info("Ajout du rendez-vous ID: {} à la liste d'attente", rendezVousId);
 
         RendezVous rendezVous = repository.findById(rendezVousId)
                 .orElseThrow(() -> {
-                    log.error("❌ Rendez-vous introuvable: ID {}", rendezVousId);
+                    log.error("Rendez-vous introuvable: ID {}", rendezVousId);
                     return new RendezVousException("Rendez-vous introuvable avec l'ID: " + rendezVousId);
                 });
 
         if (!rendezVous.peutEtreAjouteEnAttente()) {
-            log.warn("⚠️ Rendez-vous non éligible pour la liste d'attente: statut {}",
+            log.warn("Rendez-vous non éligible pour la liste d'attente: statut {}",
                     rendezVous.getStatut());
             throw new RendezVousException("Ce rendez-vous ne peut pas être ajouté à la liste d'attente " +
                     "(statut actuel: " + rendezVous.getStatut() + ")");
@@ -340,35 +339,35 @@ public class RendezVousServiceImpl implements IRendezVousService {
             rendezVous.ajouterEnListeAttente(nouvelOrdre);
             RendezVous updated = repository.save(rendezVous);
 
-            log.info("✅ Patient ajouté à la liste d'attente avec l'ordre: {}", nouvelOrdre);
-            log.info("🕐 Heure d'arrivée enregistrée: {}", updated.getHeureArrivee());
+            log.info("Patient ajouté à la liste d'attente avec l'ordre: {}", nouvelOrdre);
+            log.info("Heure d'arrivée enregistrée: {}", updated.getHeureArrivee());
 
             return toDTO(updated);
         } catch (IllegalStateException e) {
-            log.error("❌ Erreur lors de l'ajout à la liste d'attente: {}", e.getMessage());
+            log.error("Erreur lors de l'ajout à la liste d'attente: {}", e.getMessage());
             throw new RendezVousException(e.getMessage());
         }
     }
 
     @Override
     public RendezVousDTO retirerDeListeAttente(Long rendezVousId) {
-        log.info("➖ Retrait du rendez-vous ID: {} de la liste d'attente", rendezVousId);
+        log.info("Retrait du rendez-vous ID: {} de la liste d'attente", rendezVousId);
 
         RendezVous rendezVous = repository.findById(rendezVousId)
                 .orElseThrow(() -> {
-                    log.error("❌ Rendez-vous introuvable: ID {}", rendezVousId);
+                    log.error("Rendez-vous introuvable: ID {}", rendezVousId);
                     return new RendezVousException("Rendez-vous introuvable avec l'ID: " + rendezVousId);
                 });
 
         if (rendezVous.getOrdrePassage() == null) {
-            log.warn("⚠️ Le rendez-vous n'est pas dans la liste d'attente: ID {}", rendezVousId);
+            log.warn("Le rendez-vous n'est pas dans la liste d'attente: ID {}", rendezVousId);
             throw new RendezVousException("Ce rendez-vous n'est pas dans la liste d'attente");
         }
 
         rendezVous.retirerDeListeAttente();
         RendezVous updated = repository.save(rendezVous);
 
-        log.info("✅ Patient retiré de la liste d'attente");
+        log.info("Patient retiré de la liste d'attente");
 
         return toDTO(updated);
     }
@@ -377,27 +376,18 @@ public class RendezVousServiceImpl implements IRendezVousService {
     @Transactional(readOnly = true)
     public RendezVousDTO getPatientSuivant(Long medecinId) {
         LocalDate aujourdhui = LocalDate.now();
-        log.info("👤 Recherche du patient suivant pour le médecin ID: {} le {}",
-                medecinId, aujourdhui);
-
-        RendezVous patientSuivant = repository.findPatientSuivant(
+        return repository.findPatientSuivant(
                 medecinId,
                 aujourdhui,
-                StatutRendezVous.PRESENT).orElseThrow(() -> {
-                    log.warn("⚠️ Aucun patient en attente pour le médecin ID: {}", medecinId);
-                    return new RendezVousException("Aucun patient en attente pour ce médecin");
-                });
-
-        log.info("✅ Patient suivant trouvé - Ordre: {}, RDV ID: {}",
-                patientSuivant.getOrdrePassage(), patientSuivant.getId());
-
-        return toDTO(patientSuivant);
+                StatutRendezVous.PRESENT)
+                .map(this::toDTO)
+                .orElse(null);
     }
 
     // ========== Méthodes Privées ==========
 
     /**
-     * ⭐ Notifie le médecin du patient suivant avec son DOSSIER MÉDICAL COMPLET.
+     * Notifie le médecin du patient suivant avec son DOSSIER MÉDICAL COMPLET.
      * Appelée uniquement lors du passage en consultation.
      */
     private void notifierMedecinPatientSuivant(Long medecinId, LocalDate dateRdv) {
@@ -418,6 +408,7 @@ public class RendezVousServiceImpl implements IRendezVousService {
                 DossierMedicalDTO dossier = patientClient.getDossierMedical(patientSuivant.getIdPatient());
 
                 NotificationDossierDTO dossierComplet = NotificationDossierDTO.builder()
+                        .idPatient(patientSuivant.getIdPatient())
                         .nom(patientInfo.getNom())
                         .prenom(patientInfo.getPrenom())
                         .email(patientInfo.getEmail())

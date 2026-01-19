@@ -42,9 +42,7 @@
                     <th>LOGO</th>
                     <th>NAME</th>
                     <th>ADDRESS</th>
-                    <th>PHONE NUMBER</th>
                     <th>SPECIALTY</th>
-                    <th>DOCTOR</th>
                     <th>STATUS</th>
                     <th>ACTIONS</th>
                 </tr>
@@ -58,9 +56,7 @@
                     </td>
                     <td>{{ clinic.name }}</td>
                     <td>{{ clinic.address }}</td>
-                    <td>{{ clinic.phone }}</td>
                     <td>{{ clinic.specialty }}</td>
-                    <td>{{ clinic.doctor }}</td>
                     <td><span class="status-badge" [ngClass]="getStatusClass(clinic.status)">{{
                             getStatusText(clinic.status)
                             }}</span></td>

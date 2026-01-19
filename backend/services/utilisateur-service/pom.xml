@@ -60,7 +60,7 @@
 			<version>${keycloak.version}</version>
 		</dependency>
 
-		<!-- ✅ JAX-RS Dependencies (pour Keycloak Admin Client) -->
+		<!-- JAX-RS Dependencies (pour Keycloak Admin Client) -->
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
@@ -112,7 +112,11 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 			<version>10.21.0</version>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jpa</artifactId>
+        </dependency>
+    </dependencies>
 
 	<dependencyManagement>
 		<dependencies>
@@ -158,6 +162,28 @@
 					</excludes>
 				</configuration>
 			</plugin>
+
+			<!-- JaCoCo Plugin for Code Coverage -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.11</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 </project>

@@ -65,7 +65,7 @@ export class UsersComponent implements OnInit {
   mapToUser(u: UtilisateurResponse): User {
     return {
       id: u.idUtilisateur.toString(),
-      name: `${u.nom} ${u.prenom}`, // Format specifically requested as LASTNAME Firstname often, but following existing pattern
+      name: `${u.nom} ${u.prenom}`, 
       email: u.email || `${u.login}@cabinet.ma`,
       phone: u.numTel,
       status: u.actif ? 'active' : 'deactivate',
@@ -77,7 +77,6 @@ export class UsersComponent implements OnInit {
   calculatePagination() {
     const filtered = this.getFilteredUsers();
     this.totalPages = Math.ceil(filtered.length / this.itemsPerPage) || 1;
-    // Adjust current page if out of bounds
     if (this.currentPage > this.totalPages) {
       this.currentPage = this.totalPages;
     }
@@ -86,9 +85,8 @@ export class UsersComponent implements OnInit {
   getFilteredUsers(): User[] {
     let filtered = this.allUsers;
 
-    // Tab filter (Role)
     if (this.activeTab === 'administration') {
-      filtered = filtered.filter(u => u.role === 'admin' || u.role === 'super_admin'); // Include super_admin just in case
+      filtered = filtered.filter(u => u.role === 'admin' || u.role === 'super_admin'); 
     } else {
       filtered = filtered.filter(u => u.role === 'doctor');
     }
@@ -104,8 +102,6 @@ export class UsersComponent implements OnInit {
       );
     }
 
-    // Note: Status filter removed generally as backend doesn't support changing it easily, 
-    // but we can still filter VIEW by status if desired. Keeping it for view only.
     if (this.activeFilter !== 'all') {
       filtered = filtered.filter(u => u.status === this.activeFilter);
     }
@@ -122,8 +118,6 @@ export class UsersComponent implements OnInit {
     this.users = filtered.slice(startIndex, endIndex);
   }
 
-  // Getter for template to match existing property expectations if any, 
-  // but strictly we should use the this.users (paginated)
   get filteredUsers(): User[] {
     return this.users;
   }
@@ -141,19 +135,13 @@ export class UsersComponent implements OnInit {
   onSaveNewUser(userData: Partial<User>): void {
     const role = this.activeTab === 'administration' ? 'ADMIN' : 'MEDECIN';
 
-    // Generate a login based on name components or random
-    // In a real app, user might input login/password. 
-    // For now generating defaults as per likely requirement or asking user form to provide them?
-    // The UserFormComponent output likely only gives name, email, phone... 
-    // We'll assume we need to generate login/password or modify the form later.
-    // For now, let's generate from name.
+
 
     const names = userData.name?.split(' ') || ['User', 'Test'];
     const prenom = names.length > 1 ? names[names.length - 1] : names[0];
     const nom = names.length > 1 ? names.slice(0, -1).join(' ') : 'Name';
 
-    // We need a password. The form doesn't seem to have it? 
-    // We'll set a default one.
+
     const defaultPassword = 'Password123!';
     const login = `${prenom.toLowerCase()}.${nom.toLowerCase()}.${Date.now()}`;
 
@@ -164,24 +152,18 @@ export class UsersComponent implements OnInit {
       prenom: prenom,
       numTel: userData.phone || '0000000000',
       role: role,
-      // idCabinet is optional for admins, required for doctors but allowed to be null/default?
-      // Backend service says idCabinet required for MEDECIN/SECRETAIRE.
-      // We need a cabinet ID. Checking environment or hardcoding for now/asking user?
-      // Let's assume cabinet ID 1 for now or handle the error. 
-      // Actually the backend check `if ((role == MEDECIN... && idCabinet == null)`.
-      // We'll try without and see, or default to 1 if we can.
-      idCabinet: role === 'MEDECIN' ? 1 : undefined // Fallback to 1, risky but needed if no UI selection
+
+      idCabinet: role === 'MEDECIN' ? 1 : undefined 
     };
 
     this.utilisateurService.createUtilisateur(request).subscribe({
       next: (response) => {
         console.log('User created:', response);
-        this.loadUsers(); // Reload list
+        this.loadUsers(); 
         this.isAddModalOpen = false;
       },
       error: (err) => {
         console.error('Error creating user:', err);
-        // Ideally show error message
       }
     });
   }
@@ -203,8 +185,6 @@ export class UsersComponent implements OnInit {
         }
 
         // 2. Profile Update
-        // We always run this as per original logic, or checks can be added. 
-        // Assuming we want to persist other fields too.
         const names = userData.name?.split(' ') || [];
         const prenom = names.length > 1 ? names[names.length - 1] : userData.name;
         const nom = names.length > 1 ? names.slice(0, -1).join(' ') : '';
@@ -221,7 +201,7 @@ export class UsersComponent implements OnInit {
         forkJoin(updates).subscribe({
             next: (results) => {
                 console.log('Update completed:', results);
-                this.loadUsers(); // Reload only after ALL updates are done
+                this.loadUsers(); 
                 this.isEditModalOpen = false;
                 this.selectedUser = undefined;
             },
@@ -255,7 +235,6 @@ export class UsersComponent implements OnInit {
   confirmLogout(): void {
     console.log('Logging out...');
     this.isLogoutModalOpen = false;
-    // Implement redirect to login
   }
 
   onTabChange(tab: 'administration' | 'doctors'): void {

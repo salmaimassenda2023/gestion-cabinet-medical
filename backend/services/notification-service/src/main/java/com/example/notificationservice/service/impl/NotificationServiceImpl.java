@@ -1,12 +1,13 @@
 package com.example.notificationservice.service.impl;
 
+import com.example.notificationservice.dto.BaseNotificationDTO;
 import com.example.notificationservice.dto.NotificationRequestDTO;
 import com.example.notificationservice.dto.patient.PatientSuivantResponseDTO;
 import com.example.notificationservice.dto.abonnement_cabinet.*;
 import com.example.notificationservice.dto.patient.DossierPatientDTO;
 import com.example.notificationservice.entity.Notification;
 import com.example.notificationservice.repository.NotificationRepository;
-import com.example.notificationservice.service.INotificationService;
+import com.example.notificationservice.service.NotificationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,47 +23,47 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class NotificationServiceImpl implements INotificationService {
+public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository repository;
     private final ObjectMapper objectMapper;
 
-    // ==========================================
     // ENVOI - PATIENT SUIVANT (Médecin)
-    // ==========================================
 
     @Override
     public void sendNotification(NotificationRequestDTO request) {
         try {
-            log.info("🔔 Traitement notification - Type: {}", request.getType());
+            log.info("Traitement notification - Type: {}", request.getType());
 
             if ("PATIENT_SUIVANT".equals(request.getType())) {
                 processPatientSuivant(request);
             } else if ("ABONNEMENT_EXPIRE".equals(request.getType())) {
                 processAbonnementExpire(request);
             } else {
-                log.warn("⚠️ Type de notification inconnu: {}", request.getType());
+                log.warn("Type de notification inconnu: {}", request.getType());
             }
 
         } catch (Exception e) {
-            log.error("❌ Erreur traitement notification", e);
+            log.error("Erreur traitement notification", e);
             throw new RuntimeException("Erreur lors du traitement de la notification", e);
         }
     }
 
     private void processPatientSuivant(NotificationRequestDTO request) throws JsonProcessingException {
         Long medecinId = request.getTargetId();
-        log.info("📨 Envoi notification PATIENT_SUIVANT au médecin ID: {}", medecinId);
+        log.info("Envoi notification PATIENT_SUIVANT au médecin ID: {}", medecinId);
 
         String dossierJson = request.getDossierPatient() != null
                 ? objectMapper.writeValueAsString(request.getDossierPatient())
                 : null;
+        Long cabinetId = request.getCabinetId() != null ? request.getCabinetId() : 0L;
 
         Notification notification = Notification.builder()
                 .idDestinataire(medecinId)
                 .type("PATIENT_SUIVANT")
                 .titre(request.getTitre())
                 .dossierPatientJson(dossierJson)
+                .idCabinet(cabinetId)
                 .lu(false)
                 .build();
 
@@ -71,10 +72,8 @@ public class NotificationServiceImpl implements INotificationService {
 
     private void processAbonnementExpire(NotificationRequestDTO request) throws JsonProcessingException {
         Long adminId = request.getTargetId();
-        log.info("📨 Envoi notification ABONNEMENT_EXPIRE à l'admin ID: {}", adminId);
+        log.info("Envoi notification ABONNEMENT_EXPIRE à l'admin ID: {}", adminId);
 
-        // Ensure adminId is set in abonnement object for consistency if needed,
-        // though we mainly use it for serialization here.
         if (request.getAbonnement() != null && request.getAbonnement().getAdminId() == null) {
             request.getAbonnement().setAdminId(adminId);
         }
@@ -88,7 +87,7 @@ public class NotificationServiceImpl implements INotificationService {
         String dateExpiration = request.getAbonnement() != null ? request.getAbonnement().getDateExpiration() : "";
         Double montant = request.getAbonnement() != null ? request.getAbonnement().getMontant() : 0.0;
 
-        String titre = String.format("⚠️ Abonnement expire dans %d jours - %s", joursRestants, nomCabinet);
+        String titre = String.format("Abonnement expire dans %d jours - %s", joursRestants, nomCabinet);
         String message = String.format(
                 "Votre abonnement pour le cabinet '%s' expire le %s. Veuillez renouveler votre abonnement. Montant : %.2f DH",
                 nomCabinet, dateExpiration, montant);
@@ -106,14 +105,12 @@ public class NotificationServiceImpl implements INotificationService {
         repository.save(notification);
     }
 
-    // ==========================================
     // RÉCUPÉRATION - PATIENT SUIVANT (Médecin)
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
     public List<PatientSuivantResponseDTO> getPatientSuivantNotifications(Long medecinId) {
-        log.info("📥 Récupération notifications PATIENT_SUIVANT - Médecin ID: {}", medecinId);
+        log.info("Récupération notifications PATIENT_SUIVANT - Médecin ID: {}", medecinId);
 
         List<Notification> notifications = repository
                 .findByIdDestinataireAndType(medecinId, "PATIENT_SUIVANT");
@@ -126,7 +123,7 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<PatientSuivantResponseDTO> getUnreadPatientSuivantNotifications(Long medecinId) {
-        log.info("📥 Récupération notifications PATIENT_SUIVANT non lues - Médecin ID: {}", medecinId);
+        log.info("Récupération notifications PATIENT_SUIVANT non lues - Médecin ID: {}", medecinId);
 
         List<Notification> notifications = repository
                 .findByIdDestinataireAndTypeAndLuFalse(medecinId, "PATIENT_SUIVANT");
@@ -136,14 +133,12 @@ public class NotificationServiceImpl implements INotificationService {
                 .collect(Collectors.toList());
     }
 
-    // ==========================================
     // RÉCUPÉRATION - ABONNEMENT (Admin)
-    // ==========================================
 
     @Override
     @Transactional(readOnly = true)
     public List<AbonnementExpirationResponseDTO> getAbonnementNotifications(Long adminId) {
-        log.info("📥 Récupération notifications ABONNEMENT_EXPIRE - Admin ID: {}", adminId);
+        log.info("Récupération notifications ABONNEMENT_EXPIRE - Admin ID: {}", adminId);
 
         List<Notification> notifications = repository
                 .findByIdDestinataireAndType(adminId, "ABONNEMENT_EXPIRE");
@@ -156,7 +151,7 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<AbonnementExpirationResponseDTO> getUnreadAbonnementNotifications(Long adminId) {
-        log.info("📥 Récupération notifications ABONNEMENT_EXPIRE non lues - Admin ID: {}", adminId);
+        log.info("Récupération notifications ABONNEMENT_EXPIRE non lues - Admin ID: {}", adminId);
 
         List<Notification> notifications = repository
                 .findByIdDestinataireAndTypeAndLuFalse(adminId, "ABONNEMENT_EXPIRE");
@@ -166,13 +161,28 @@ public class NotificationServiceImpl implements INotificationService {
                 .collect(Collectors.toList());
     }
 
-    // ==========================================
     // GESTION COMMUNE
-    // ==========================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public BaseNotificationDTO getNotificationById(Long notificationId) {
+        log.info("Récupération notification - ID: {}", notificationId);
+
+        Notification notification = repository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification introuvable: " + notificationId));
+
+        if ("PATIENT_SUIVANT".equals(notification.getType())) {
+            return toPatientSuivantDTO(notification);
+        } else if ("ABONNEMENT_EXPIRE".equals(notification.getType())) {
+            return toAbonnementDTO(notification);
+        }
+
+        return null;
+    }
 
     @Override
     public void markAsRead(Long notificationId) {
-        log.info("✅ Marquage notification comme lue - ID: {}", notificationId);
+        log.info("Marquage notification comme lue - ID: {}", notificationId);
 
         Notification notification = repository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification introuvable: " + notificationId));
@@ -180,13 +190,13 @@ public class NotificationServiceImpl implements INotificationService {
         if (!notification.getLu()) {
             notification.marquerCommeLue();
             repository.save(notification);
-            log.info("✅ Notification marquée comme lue");
+            log.info("Notification marquée comme lue");
         }
     }
 
     @Override
     public void markAllAsRead(Long userId) {
-        log.info("✅ Marquage toutes notifications comme lues - User ID: {}", userId);
+        log.info("Marquage toutes notifications comme lues - User ID: {}", userId);
 
         List<Notification> notifications = repository
                 .findByIdDestinataireAndLuFalseOrderByDateEnvoiDesc(userId);
@@ -194,7 +204,7 @@ public class NotificationServiceImpl implements INotificationService {
         if (!notifications.isEmpty()) {
             notifications.forEach(Notification::marquerCommeLue);
             repository.saveAll(notifications);
-            log.info("✅ {} notifications marquées", notifications.size());
+            log.info("{} notifications marquées", notifications.size());
         }
     }
 
@@ -207,14 +217,12 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional
     public void cleanOldNotifications() {
-        log.info("🧹 Nettoyage notifications > 90 jours");
+        log.info("Nettoyage notifications > 90 jours");
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(90);
         repository.deleteByDateEnvoiBefore(cutoffDate);
     }
 
-    // ==========================================
     // CONVERSIONS PRIVÉES (2 méthodes séparées)
-    // ==========================================
 
     /**
      * Convertir en PatientSuivantResponseDTO (pour Médecin)
@@ -236,11 +244,11 @@ public class NotificationServiceImpl implements INotificationService {
                     .message(notification.getMessage())
                     .lu(notification.getLu())
                     .dateEnvoi(notification.getDateEnvoi().toString())
-                    .dossierPatient(dossierPatient)// ✅ Dossier patient
+                    .dossierPatient(dossierPatient)
                     .build();
 
         } catch (JsonProcessingException e) {
-            log.error("❌ Erreur désérialisation dossier patient - Notification ID: {}",
+            log.error("Erreur désérialisation dossier patient - Notification ID: {}",
                     notification.getIdNotification(), e);
 
             // Retourner DTO minimal en cas d'erreur
@@ -282,11 +290,11 @@ public class NotificationServiceImpl implements INotificationService {
                     .message(notification.getMessage())
                     .lu(notification.getLu())
                     .dateEnvoi(notification.getDateEnvoi().toString())
-                    .abonnementInfo(abonnementInfo) // ✅ Infos abonnement
+                    .abonnementInfo(abonnementInfo) 
                     .build();
 
         } catch (JsonProcessingException e) {
-            log.error("❌ Erreur désérialisation infos abonnement - Notification ID: {}",
+            log.error("Erreur désérialisation infos abonnement - Notification ID: {}",
                     notification.getIdNotification(), e);
 
             // Retourner DTO minimal en cas d'erreur

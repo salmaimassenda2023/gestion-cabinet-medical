@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core'; // Ajoutez ChangeDetectorRef
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PatientFormComponent } from './patient-form/patient-form';
 import { Patient } from '../../../core/models/patient.model';
 import { PatientService } from '../../../core/services/patient.service';
 import { UtilisateurService } from '../../auth/services/utilisateur.service';
+import { CabinetService } from '../../doctor/services/cabinet.service';
+import { switchMap, catchError, tap, finalize, takeUntil } from 'rxjs/operators'; // Ajoutez takeUntil
+import { of, Subject } from 'rxjs';
 
 @Component({
     selector: 'app-secretary-patients',
@@ -13,42 +16,121 @@ import { UtilisateurService } from '../../auth/services/utilisateur.service';
     templateUrl: './patients.html',
     styleUrls: ['./patients.css']
 })
-export class SecretaryPatientsComponent implements OnInit {
+export class SecretaryPatientsComponent implements OnInit, OnDestroy { // Ajoutez OnDestroy
     patients: Patient[] = [];
     isAddModalOpen = false;
     isEditModalOpen = false;
     isDeleteModalOpen = false;
     selectedPatient?: Patient;
-    idCabinet?: number;
+    idCabinet!: number;
+    isLoading = true;
+    errorMessage = '';
+    dataLoaded = false;
+
+    private destroy$ = new Subject<void>();
 
     constructor(
         private patientService: PatientService,
-        private utilisateurService: UtilisateurService
-    ) { }
+        private utilisateurService: UtilisateurService,
+        private cabinetService: CabinetService,
+        private cdr: ChangeDetectorRef 
+    ) { 
+        console.log('🔨 SecretaryPatientsComponent constructor called');
+    }
 
     ngOnInit() {
-        this.loadCurrentUserAndPatients();
+        console.log('🔨 SecretaryPatientsComponent initialized');
+        this.loadData(); 
     }
 
-    loadCurrentUserAndPatients() {
-        this.utilisateurService.getCurrentUser().subscribe({
-            next: (user) => {
-                this.idCabinet = user.idCabinet;
-                if (this.idCabinet) {
-                    this.loadPatients();
-                }
-            },
-            error: (err) => console.error('Error fetching current user:', err)
-        });
+    ngOnDestroy() {
+        this.destroy$.next();
+        this.destroy$.complete();
     }
 
-    loadPatients() {
-        if (this.idCabinet) {
-            this.patientService.getPatientsByCabinet(this.idCabinet).subscribe({
-                next: (patients) => this.patients = patients,
-                error: (err) => console.error('Error fetching patients:', err)
-            });
+    trackById(index: number, item: Patient): number {
+        return item.id || index;
+    }
+loadData() {
+    console.log('🚀 loadData() called');
+    this.isLoading = true;
+    this.errorMessage = '';
+    
+    // First get current user
+    this.utilisateurService.getCurrentUser().pipe(
+        takeUntil(this.destroy$),
+        switchMap(user => {
+            console.log('👤 Current user:', user);
+            
+            if (!user?.idUtilisateur) {
+                throw new Error('No user ID found');
+            }
+            
+            // Use getCabinetByMedecinId() with current user ID
+            return this.cabinetService.getCabinetByMedecinId(user.idUtilisateur);
+        }),
+        tap(cabinet => {
+            console.log('📦 Cabinet loaded:', cabinet);
+            
+            if (!cabinet?.id) {
+                throw new Error('No cabinet found');
+            }
+            
+            this.idCabinet = cabinet.id;
+            console.log('✅ Cabinet ID set:', this.idCabinet);
+        }),
+        switchMap(() => {
+            return this.patientService.getPatientsByCabinet(this.idCabinet);
+        }),
+        catchError(err => {
+            console.error('❌ Error:', err);
+            this.errorMessage = err.message || 'Error loading data';
+            return of([]);
+        }),
+        finalize(() => {
+            this.isLoading = false;
+            this.cdr.detectChanges();
+            console.log('🔄 Change detection triggered');
+        })
+    ).subscribe({
+        next: (patients) => {
+            console.log('✅ Patients received:', patients);
+            this.patients = patients || [];
+            console.log(`✅ ${this.patients.length} patients loaded successfully`);
+            this.dataLoaded = true;
+        },
+        error: (err) => {
+            console.error('❌ Subscription error:', err);
+            this.errorMessage = 'Failed to load data';
         }
+    });
+}
+    openAddModal() {
+        console.log('➕ Opening Add Modal');
+        
+        if (!this.idCabinet) {
+            console.error('❌ Cannot open add modal: No cabinet ID');
+            this.errorMessage = 'Cabinet information not available. Please refresh.';
+            return;
+        }
+        
+        this.selectedPatient = undefined;
+        this.isAddModalOpen = true;
+        console.log('✅ Add modal opened');
+    }
+
+    openEditModal(patient: Patient) {
+        console.log('✏️ Opening Edit Modal for patient:', patient);
+        
+        if (!this.idCabinet) {
+            console.error('❌ Cannot open edit modal: No cabinet ID');
+            this.errorMessage = 'Cabinet information not available. Please refresh.';
+            return;
+        }
+        
+        this.selectedPatient = patient;
+        this.isEditModalOpen = true;
+        console.log('✅ Edit modal opened');
     }
 
     calculateAge(dateNaissance: string): number {
@@ -63,59 +145,95 @@ export class SecretaryPatientsComponent implements OnInit {
         return age;
     }
 
-    openAddModal() {
-        this.selectedPatient = undefined;
-        this.isAddModalOpen = true;
-    }
-
-    openEditModal(patient: Patient) {
-        this.selectedPatient = patient;
-        this.isEditModalOpen = true;
-    }
-
     openDeleteModal(patient: Patient) {
         this.selectedPatient = patient;
         this.isDeleteModalOpen = true;
     }
 
     onSavePatient(patientData: any) {
+        console.log('💾 Saving patient data:', patientData);
+        
+        if (!patientData.idCabinet && this.idCabinet) {
+            patientData.idCabinet = this.idCabinet;
+        }
+        
+        this.isLoading = true;
+        
         if (this.selectedPatient && this.selectedPatient.id) {
-            // Update
             const updatedPatient: Patient = { ...this.selectedPatient, ...patientData };
-            this.patientService.updatePatient(this.selectedPatient.id, updatedPatient).subscribe({
+            console.log('🔄 Updating patient:', updatedPatient);
+            
+            this.patientService.updatePatient(this.selectedPatient.id, updatedPatient).pipe(
+                finalize(() => {
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
+                })
+            ).subscribe({
                 next: () => {
-                    this.loadPatients();
+                    this.loadData();
                     this.isEditModalOpen = false;
                     this.selectedPatient = undefined;
                 },
-                error: (err) => console.error('Error updating patient:', err)
+                error: (err) => {
+                    console.error('Error updating patient:', err);
+                    this.errorMessage = 'Error updating patient.';
+                }
             });
         } else {
-            // Create
             const newPatient: Patient = {
                 ...patientData,
                 idCabinet: this.idCabinet
             };
-            this.patientService.createPatient(newPatient).subscribe({
+            console.log('➕ Creating patient with idCabinet:', newPatient.idCabinet);
+            
+            this.patientService.createPatient(newPatient).pipe(
+                finalize(() => {
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
+                })
+            ).subscribe({
                 next: () => {
-                    this.loadPatients();
+                    this.loadData();
                     this.isAddModalOpen = false;
                 },
-                error: (err) => console.error('Error creating patient:', err)
+                error: (err) => {
+                    console.error('Error creating patient:', err);
+                    this.errorMessage = 'Error creating patient.';
+                }
             });
         }
     }
 
+    onCancel() {
+        this.isAddModalOpen = false;
+        this.isEditModalOpen = false;
+        this.selectedPatient = undefined;
+    }
+
     confirmDelete() {
         if (this.selectedPatient && this.selectedPatient.id) {
-            this.patientService.deletePatient(this.selectedPatient.id).subscribe({
+            this.isLoading = true;
+            
+            this.patientService.deletePatient(this.selectedPatient.id).pipe(
+                finalize(() => {
+                    this.isLoading = false;
+                    this.cdr.detectChanges();
+                })
+            ).subscribe({
                 next: () => {
-                    this.loadPatients();
+                    this.loadData();
                     this.isDeleteModalOpen = false;
                     this.selectedPatient = undefined;
                 },
-                error: (err) => console.error('Error deleting patient:', err)
+                error: (err) => {
+                    console.error('Error deleting patient:', err);
+                    this.errorMessage = 'Error deleting patient.';
+                }
             });
         }
+    }
+
+    refreshData() {
+        this.loadData();
     }
 }

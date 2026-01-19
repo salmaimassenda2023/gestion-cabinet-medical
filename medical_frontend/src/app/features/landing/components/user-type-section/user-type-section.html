@@ -63,14 +63,48 @@
                     </div>
                 </div>
 
-                <!-- Chat Messages -->
+                <!-- Add this to your chat-messages section -->
                 <div class="chat-messages">
-                    <div *ngFor="let chat of chatHistory()" class="message-row"
+                    <div *ngFor="let chat of chatHistory(); let isLast = last" class="message-row"
                         [class.message-user]="chat.role === 'user'" [class.message-bot]="chat.role === 'bot'">
+
                         <div class="message-bubble" [class.bubble-user]="chat.role === 'user'"
                             [class.bubble-bot]="chat.role === 'bot'">
-                            <p>{{ chat.message }}</p>
+
+                            <!-- Display message -->
+                            <p [innerHTML]="chat.message.replace(/\n/g, '<br>')"></p>
+
+                            <!-- Display data if available -->
+                            <div *ngIf="chat.data" class="chat-data">
+
+                                <!-- Cabinet search results -->
+                                <div *ngIf="chat.data.length > 0 && chat.data[0].nom" class="cabinet-results">
+                                    <div *ngFor="let cabinet of chat.data" class="cabinet-card">
+                                        <h4>{{ cabinet.nom }}</h4>
+                                        <p><lucide-icon [img]="MapPinIcon" [size]="16"></lucide-icon> {{ cabinet.adresse
+                                            }}</p>
+                                        <p><lucide-icon [img]="StethoscopeIcon" [size]="16"></lucide-icon> {{
+                                            cabinet.specialite }}</p>
+                                        <p><lucide-icon [img]="DollarSignIcon" [size]="16"></lucide-icon> {{
+                                            cabinet.tarifConsultation }} TND</p>
+                                        <div class="cabinet-actions">
+                                            <button (click)="checkAvailability(cabinet.id)" class="btn-sm">
+                                                <lucide-icon [img]="CalendarIcon" [size]="16"></lucide-icon> Check
+                                                availability
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
                         </div>
+
+                        <!-- Loading indicator -->
+                        <div *ngIf="isLoading() && isLast" class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+
                     </div>
                 </div>
 
@@ -85,7 +119,7 @@
                         </button>
                     </div>
                     <div class="suggestions-row">
-                        <button *ngFor="let suggestion of suggestions" (click)="handleSuggestion(suggestion)"
+                        <button *ngFor="let suggestion of suggestions()" (click)="handleSuggestion(suggestion)"
                             class="suggestion-chip">
                             {{ suggestion }}
                         </button>

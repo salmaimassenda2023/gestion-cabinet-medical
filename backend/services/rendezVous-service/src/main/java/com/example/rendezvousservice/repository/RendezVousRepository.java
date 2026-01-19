@@ -49,7 +49,6 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
      * Vérifie si un créneau est disponible pour un médecin.
      * Retourne le RDV existant si le créneau est occupé, sinon Optional.empty().
      *
-     * CORRECTION: Utilisation de l'enum StatutRendezVous au lieu de String
      */
     @Query("SELECT r FROM RendezVous r WHERE r.idMedecin = :idMedecin " +
             "AND r.dateRdv = :dateRdv AND r.heureRdv = :heureRdv " +
@@ -68,7 +67,6 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
      * Récupère la liste d'attente complète d'un médecin pour une date.
      * Triée par ordre de passage croissant.
      *
-     * CORRECTION: Utilisation de l'enum StatutRendezVous au lieu de String
      */
     @Query("SELECT r FROM RendezVous r WHERE r.idMedecin = :idMedecin " +
             "AND r.dateRdv = :dateRdv AND r.statut = :statutPresent " +
@@ -83,7 +81,6 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
      * Récupère le patient suivant dans la file d'attente.
      * Retourne le RDV avec le plus petit ordre de passage.
      *
-     * CORRECTION: Utilisation de l'enum StatutRendezVous au lieu de String
      */
     @Query("SELECT r FROM RendezVous r WHERE r.idMedecin = :idMedecin " +
             "AND r.dateRdv = :dateRdv AND r.statut = :statutPresent " +
@@ -98,7 +95,6 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
      * Trouve le numéro d'ordre maximum actuel.
      * Utilisé pour attribuer un ordre au prochain patient.
      *
-     * CORRECTION: Utilisation de l'enum StatutRendezVous au lieu de String
      */
     @Query("SELECT COALESCE(MAX(r.ordrePassage), 0) FROM RendezVous r " +
             "WHERE r.idMedecin = :idMedecin AND r.dateRdv = :dateRdv " +
@@ -114,7 +110,6 @@ public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
      * Exclut les RDV annulés et terminés.
      * Triés par heure croissante.
      *
-     * CORRECTION: Utilisation de l'enum StatutRendezVous au lieu de String
      */
     @Query("SELECT r FROM RendezVous r WHERE r.idMedecin = :idMedecin " +
             "AND r.dateRdv = :dateRdv " +

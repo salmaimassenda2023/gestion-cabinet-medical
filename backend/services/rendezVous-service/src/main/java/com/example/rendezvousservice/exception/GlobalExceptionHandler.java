@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RendezVousException.class)
     public ResponseEntity<ErrorResponse> handleRendezVousException(
             RendezVousException ex, WebRequest request) {
-        log.error("❌ RendezVousException: {}", ex.getMessage());
+        log.error("RendezVousException: {}", ex.getMessage());
 
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex) {
-        log.error("❌ Erreur de validation: {}", ex.getMessage());
+        log.error("Erreur de validation: {}", ex.getMessage());
 
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
-        log.error("❌ Exception non gérée: {}", ex.getMessage(), ex);
+        log.error("Exception non gérée: {}", ex.getMessage(), ex);
 
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())

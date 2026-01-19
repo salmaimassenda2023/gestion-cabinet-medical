@@ -1,9 +1,6 @@
 package com.example.cabinetservice.controller;
 
-import com.example.cabinetservice.dto.CabinetCreateDTO;
-import com.example.cabinetservice.dto.CabinetResponseDTO;
-import com.example.cabinetservice.dto.CabinetUpdateDTO;
-import com.example.cabinetservice.dto.ServiceConsultationDTO;
+import com.example.cabinetservice.dto.*;
 import com.example.cabinetservice.service.CabinetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/cabinet")
@@ -46,6 +44,11 @@ public class CabinetController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/medecin/{medecinId}")
+    public ResponseEntity<CabinetResponseDTO> getCabinetByMedecinId(@PathVariable Long medecinId) {
+        return ResponseEntity.ok(cabinetService.getCabinetByMedecinId(medecinId));
+    }
+
     @GetMapping("/{id}/actif")
     public ResponseEntity<Boolean> isCabinetActive(@PathVariable Long id) {
         return ResponseEntity.ok(cabinetService.isCabinetActive(id));
@@ -69,4 +72,20 @@ public class CabinetController {
         ServiceConsultationDTO service = cabinetService.getServiceById(cabinetId, serviceId);
         return ResponseEntity.ok(service);
     }
+    @GetMapping("/abonnements")
+    public ResponseEntity<List<AbonnementResponseDTO>> getAllAbonnements() {
+        return ResponseEntity.ok(cabinetService.getAllAbonnements());
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<CabinetResponseDTO> getCabinetByUserId(@PathVariable Long userId) {
+        try {
+            CabinetResponseDTO cabinet = cabinetService.getCabinetByUserId(userId);
+            return ResponseEntity.ok(cabinet);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
+        }
+    }
+
 }

@@ -22,7 +22,6 @@ import java.util.List;
 @RequestMapping("/api/consultation")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class ConsultationController {
 
     private final ConsultationService consultationService;
@@ -33,7 +32,7 @@ public class ConsultationController {
     @PostMapping
     public ResponseEntity<ConsultationResponseDTO> createConsultation(
             @Valid @RequestBody ConsultationCreateDTO dto) throws ServiceValidationException {
-        log.info("🏥 Création d'une consultation pour le patient ID: {}", dto.getIdPatient());
+        log.info("Création d'une consultation pour le patient ID: {}", dto.getIdPatient());
         ConsultationResponseDTO response = consultationService.createConsultation(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -43,7 +42,7 @@ public class ConsultationController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ConsultationResponseDTO> getConsultation(@PathVariable Long id) {
-        log.info("📋 Récupération de la consultation ID: {}", id);
+        log.info("Récupération de la consultation ID: {}", id);
         ConsultationResponseDTO response = consultationService.getConsultation(id);
         return ResponseEntity.ok(response);
     }
@@ -55,7 +54,7 @@ public class ConsultationController {
     public ResponseEntity<ConsultationResponseDTO> updateConsultation(
             @PathVariable Long id,
             @Valid @RequestBody ConsultationUpdateDTO dto) {
-        log.info("✏️ Mise à jour de la consultation ID: {}", id);
+        log.info("Mise à jour de la consultation ID: {}", id);
         ConsultationResponseDTO response = consultationService.updateConsultation(id, dto);
         return ResponseEntity.ok(response);
     }
@@ -65,7 +64,7 @@ public class ConsultationController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteConsultation(@PathVariable Long id) {
-        log.info("🗑️ Suppression de la consultation ID: {}", id);
+        log.info("Suppression de la consultation ID: {}", id);
         consultationService.deleteConsultation(id);
         return ResponseEntity.noContent().build();
     }
@@ -76,7 +75,7 @@ public class ConsultationController {
     @GetMapping("/patient/{idPatient}")
     public ResponseEntity<List<ConsultationResponseDTO>> getConsultationsByPatient(
             @PathVariable Long idPatient) {
-        log.info("📚 Récupération des consultations du patient ID: {}", idPatient);
+        log.info("Récupération des consultations du patient ID: {}", idPatient);
         List<ConsultationResponseDTO> response = consultationService.getConsultationsByPatient(idPatient);
         return ResponseEntity.ok(response);
     }
@@ -89,7 +88,7 @@ public class ConsultationController {
             @RequestParam(required = false) Long idPatient,
             @RequestParam(required = false) String dateDebut,
             @RequestParam(required = false) String dateFin) {
-        log.info("🔍 Recherche de consultations avec filtres");
+        log.info("Recherche de consultations avec filtres");
         List<ConsultationResponseDTO> response = consultationService.searchConsultations(
                 idPatient, dateDebut, dateFin);
         return ResponseEntity.ok(response);
@@ -104,7 +103,7 @@ public class ConsultationController {
     public ResponseEntity<ExamenCliniqueDTO> addExamenClinique(
             @PathVariable Long idConsultation,
             @Valid @RequestBody ExamenCliniqueCreateDTO dto) {
-        log.info("🩺 Ajout d'examen clinique à la consultation ID: {}", idConsultation);
+        log.info("Ajout d'examen clinique à la consultation ID: {}", idConsultation);
         ExamenCliniqueDTO response = consultationService.addExamenClinique(idConsultation, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -115,7 +114,7 @@ public class ConsultationController {
     @GetMapping("/{idConsultation}/examens")
     public ResponseEntity<List<ExamenCliniqueDTO>> getExamensCliniques(
             @PathVariable Long idConsultation) {
-        log.info("📊 Récupération des examens de la consultation ID: {}", idConsultation);
+        log.info("Récupération des examens de la consultation ID: {}", idConsultation);
         List<ExamenCliniqueDTO> response = consultationService.getExamensCliniques(idConsultation);
         return ResponseEntity.ok(response);
     }
@@ -129,7 +128,7 @@ public class ConsultationController {
     public ResponseEntity<OrdonnanceMedicamentDTO> createOrdonnanceMedicament(
             @PathVariable Long idConsultation,
             @Valid @RequestBody OrdonnanceMedicamentCreateDTO dto) {
-        log.info("💊 Création d'ordonnance médicament pour consultation ID: {}", idConsultation);
+        log.info("Création d'ordonnance médicament pour consultation ID: {}", idConsultation);
         OrdonnanceMedicamentDTO response = consultationService.createOrdonnanceMedicament(
                 idConsultation, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -142,7 +141,7 @@ public class ConsultationController {
     public ResponseEntity<byte[]> downloadOrdonnanceMedicamentPDF(
             @PathVariable Long idConsultation,
             @PathVariable Long idOrdonnance) {
-        log.info("📄 Génération PDF ordonnance médicament ID: {}", idOrdonnance);
+        log.info("Génération PDF ordonnance médicament ID: {}", idOrdonnance);
         byte[] pdf = consultationService.generateOrdonnanceMedicamentPDF(idOrdonnance);
 
         HttpHeaders headers = new HttpHeaders();
@@ -161,7 +160,7 @@ public class ConsultationController {
     public ResponseEntity<OrdonnanceExamenDTO> createOrdonnanceExamen(
             @PathVariable Long idConsultation,
             @Valid @RequestBody OrdonnanceExamenCreateDTO dto) {
-        log.info("🔬 Création d'ordonnance examen pour consultation ID: {}", idConsultation);
+        log.info("Création d'ordonnance examen pour consultation ID: {}", idConsultation);
         OrdonnanceExamenDTO response = consultationService.createOrdonnanceExamen(
                 idConsultation, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -174,7 +173,7 @@ public class ConsultationController {
     public ResponseEntity<byte[]> downloadOrdonnanceExamenPDF(
             @PathVariable Long idConsultation,
             @PathVariable Long idOrdonnance) {
-        log.info("📄 Génération PDF ordonnance examen ID: {}", idOrdonnance);
+        log.info("Génération PDF ordonnance examen ID: {}", idOrdonnance);
         byte[] pdf = consultationService.generateOrdonnanceExamenPDF(idOrdonnance);
 
         HttpHeaders headers = new HttpHeaders();
@@ -193,7 +192,7 @@ public class ConsultationController {
     public ResponseEntity<FactureDTO> createFacture(
             @PathVariable Long consultationId,
             @Valid @RequestBody FactureCreateDTO dto) throws ServiceValidationException {
-        log.info("💰 Création de facture pour consultation ID: {}", consultationId);
+        log.info("Création de facture pour consultation ID: {}", consultationId);
         FactureDTO response = consultationService.createFacture(consultationId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -203,7 +202,7 @@ public class ConsultationController {
      */
     @GetMapping("/{idConsultation}/factures")
     public ResponseEntity<List<FactureDTO>> getFactures(@PathVariable Long idConsultation) {
-        log.info("🧾 Récupération des factures de la consultation ID: {}", idConsultation);
+        log.info("Récupération des factures de la consultation ID: {}", idConsultation);
         List<FactureDTO> response = consultationService.getFactures(idConsultation);
         return ResponseEntity.ok(response);
     }
@@ -213,7 +212,7 @@ public class ConsultationController {
      */
     @GetMapping("/factures/{idFacture}/pdf")
     public ResponseEntity<byte[]> downloadFacturePDF(@PathVariable Long idFacture) {
-        log.info("📄 Génération PDF facture ID: {}", idFacture);
+        log.info("Génération PDF facture ID: {}", idFacture);
         byte[] pdf = consultationService.generateFacturePDF(idFacture);
 
         HttpHeaders headers = new HttpHeaders();
@@ -230,8 +229,17 @@ public class ConsultationController {
     public ResponseEntity<FactureDTO> updateFactureStatut(
             @PathVariable Long idFacture,
             @RequestParam String statut) {
-        log.info("🔄 Mise à jour statut facture ID: {} -> {}", idFacture, statut);
+        log.info("Mise à jour statut facture ID: {} -> {}", idFacture, statut);
         FactureDTO response = consultationService.updateFactureStatut(idFacture, statut);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/cabinet/{cabinetId}/factures")
+    public ResponseEntity<List<FactureDTO>> getAllFacturesByCabinet(
+            @PathVariable Long cabinetId) {
+        log.info("Récupération des factures du cabinet ID: {}", cabinetId);
+        List<FactureDTO> factures = consultationService.getAllFacturesByCabinetWithDetails(cabinetId);
+        return ResponseEntity.ok(factures);
+    }
+
+
 }

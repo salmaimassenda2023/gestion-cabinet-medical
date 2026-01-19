@@ -3,48 +3,107 @@
         <div class="header-info">
             <h1>Patients Management</h1>
             <p>Total Patients: {{ patients.length }}</p>
+            <p *ngIf="isLoading" class="loading-text">
+                <i class="fas fa-spinner fa-spin"></i> Loading patients...
+            </p>
+            <p *ngIf="errorMessage" class="error-text">
+                <i class="fas fa-exclamation-triangle"></i> {{ errorMessage }}
+                <button (click)="loadData()" class="retry-btn">Retry</button>
+            </p>
         </div>
-        <button class="btn-primary" (click)="openAddModal()">
+        <button class="btn-primary" (click)="openAddModal()" [disabled]="isLoading || !idCabinet">
             <i class="fas fa-plus"></i> Add Patient
         </button>
     </div>
 
     <div class="table-card">
-        <table class="patients-table">
+        <!-- Loading State -->
+        <div *ngIf="isLoading && patients.length === 0" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading patients data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="errorMessage && patients.length === 0 && !isLoading" class="error-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>{{ errorMessage }}</p>
+            <button (click)="loadData()" class="btn-retry">Try Again</button>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && !errorMessage && patients.length === 0" class="empty-state">
+            <i class="fas fa-users-slash"></i>
+            <p>No patients found. Click "Add Patient" to create one.</p>
+        </div>
+
+        <!-- Data Table -->
+        <table class="patients-table" *ngIf="!isLoading && patients.length > 0">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>CIN</th>
-                    <th>Name</th>
-                    <th>Age</th>
+                    <th>Informations Patient</th>
+                    <th>Contact</th>
                     <th>Mutuelle</th>
-                    <th>Gender</th>
+                    <th>Sexe</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let p of patients">
+                <tr *ngFor="let p of patients; trackBy: trackById">
                     <td>#{{ p.id }}</td>
                     <td>{{ p.cin }}</td>
                     <td>
-                        <div class="patient-name-cell">
-                            <div class="avatar">{{ p.nom.charAt(0) }}</div>
-                            {{ p.prenom }} {{ p.nom }}
+                        <div class="patient-info">
+                            <div class="patient-name">
+                                <div class="avatar">{{ p.nom?.charAt(0) || '?' }}</div>
+                                <div class="name-details">
+                                    <strong>{{ p.prenom }} {{ p.nom }}</strong>
+                                    <div class="patient-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-birthday-cake"></i>
+                                            {{ p.dateNaissance | date:'dd/MM/yyyy' }} ({{ calculateAge(p.dateNaissance) }} ans)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </td>
-                    <td>{{ calculateAge(p.dateNaissance) }}</td>
-                    <td><span class="badge mutuelle">{{ p.typeMutuelle || 'None' }}</span></td>
+                    <td>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <i class="fas fa-phone"></i>
+                                {{ p.telephone }}
+                            </div>
+                            <div class="contact-item" *ngIf="p.email">
+                                <i class="fas fa-envelope"></i>
+                                {{ p.email }}
+                            </div>
+                            <div class="contact-item" *ngIf="p.adresse">
+                                <i class="fas fa-home"></i>
+                                {{ p.adresse }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="mutuelle-info">
+                            <span class="badge mutuelle">{{ p.typeMutuelle || 'Aucune' }}</span>
+                            <div *ngIf="p.numeroMutuelle" class="mutuelle-num">
+                                #{{ p.numeroMutuelle }}
+                            </div>
+                        </div>
+                    </td>
                     <td>
                         <span class="gender-tag" [class]="p.sexe === 'M' ? 'male' : 'female'">
-                            {{ p.sexe === 'M' ? 'Male' : 'Female' }}
+                            {{ p.sexe === 'M' ? 'M' : 'F' }}
                         </span>
                     </td>
                     <td>
                         <div class="action-btns">
-                            <button class="btn-icon edit" (click)="openEditModal(p)" title="Edit">
+                            <button class="btn-icon edit" (click)="openEditModal(p)" title="Edit" [disabled]="isLoading">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn-icon delete" (click)="openDeleteModal(p)" title="Delete">
+                            <button class="btn-icon delete" (click)="openDeleteModal(p)" title="Delete" [disabled]="isLoading">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -54,20 +113,35 @@
         </table>
     </div>
 
-    <!-- Modals -->
-    <app-modal [isOpen]="isAddModalOpen" title="Add New Patient" [showFooter]="false" (close)="isAddModalOpen = false">
-        <app-patient-form (save)="onSavePatient($event)" (cancel)="isAddModalOpen = false"></app-patient-form>
-    </app-modal>
+    <!-- Add Patient Modal -->
+<app-modal [isOpen]="isAddModalOpen" title="Add New Patient" [showFooter]="false" (close)="isAddModalOpen = false">
+    <app-patient-form 
+        *ngIf="idCabinet && isAddModalOpen"
+        [idCabinet]="idCabinet"
+        (save)="onSavePatient($event)" 
+        (cancel)="isAddModalOpen = false">
+    </app-patient-form>
+    <div *ngIf="!idCabinet" class="loading-message">
+        <p>Loading cabinet information...</p>
+    </div>
+</app-modal>
 
-    <app-modal [isOpen]="isEditModalOpen" title="Edit Patient" [showFooter]="false" (close)="isEditModalOpen = false">
-        <app-patient-form [patient]="selectedPatient" (save)="onSavePatient($event)"
-            (cancel)="isEditModalOpen = false"></app-patient-form>
-    </app-modal>
+<!-- Edit Patient Modal -->
+<app-modal [isOpen]="isEditModalOpen" title="Edit Patient" [showFooter]="false" (close)="isEditModalOpen = false">
+    <app-patient-form 
+        *ngIf="idCabinet && isEditModalOpen"
+        [patient]="selectedPatient"
+        [idCabinet]="idCabinet"
+        (save)="onSavePatient($event)"
+        (cancel)="isEditModalOpen = false">
+    </app-patient-form>
+    <div *ngIf="!idCabinet" class="loading-message">
+        <p>Loading cabinet information...</p>
+    </div>
+</app-modal>
 
     <app-modal [isOpen]="isDeleteModalOpen" title="Delete Patient" confirmText="Delete" [isDestructive]="true"
         (close)="isDeleteModalOpen = false" (confirm)="confirmDelete()">
-        <p>Are you sure you want to delete patient <strong>{{ selectedPatient?.prenom }} {{ selectedPatient?.nom
-                }}</strong>? This action cannot be
-            undone.</p>
+        <p>Are you sure you want to delete patient <strong>{{ selectedPatient?.prenom }} {{ selectedPatient?.nom }}</strong>? This action cannot be undone.</p>
     </app-modal>
 </div>

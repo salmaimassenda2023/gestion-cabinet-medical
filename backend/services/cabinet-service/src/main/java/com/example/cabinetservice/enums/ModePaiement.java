@@ -1,8 +1,5 @@
 package com.example.cabinetservice.enums;
 
-/**
- * Enum - Mode Paiement
- */
 public enum ModePaiement {
     CARTE("Carte bancaire"),
     VIREMENT("Virement bancaire"),

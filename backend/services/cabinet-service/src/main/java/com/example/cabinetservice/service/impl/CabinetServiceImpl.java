@@ -14,6 +14,7 @@ import com.example.cabinetservice.repository.CabinetRepository;
 import com.example.cabinetservice.repository.PaiementRepository;
 import com.example.cabinetservice.repository.ServiceConsultationRepository;
 import com.example.cabinetservice.service.CabinetService;
+import com.example.cabinetservice.utilisateur.UtilisateurResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class CabinetServiceImpl implements CabinetService {
     private final PaiementRepository paiementRepository;
     private final CabinetMapper cabinetMapper;
     private final com.example.cabinetservice.utilisateur.MedecinClient medecinClient;
+    private Long userId;
 
     @Override
     @Transactional
@@ -54,11 +56,11 @@ public class CabinetServiceImpl implements CabinetService {
         cabinet.setActif(false); // ← FORCER À FALSE
         cabinet = cabinetRepository.save(cabinet);
 
-        // 2. Create and Link Abonnement (SUSPENDU par défaut)
+        // 2. Create and Link Abonnement 
         if (dto.getAbonnement() != null) {
             AbonnementCabinet abonnement = cabinetMapper.toEntity(dto.getAbonnement());
             abonnement.setCabinet(cabinet);
-            abonnement.setStatut(AbonnementStatus.SUSPENDU); // ← SUSPENDU au lieu de ACTIF
+            abonnement.setStatut(AbonnementStatus.ACTIF); 
             abonnement.setDateDebut(LocalDateTime.now());
 
             if ("ANNUEL".equalsIgnoreCase(abonnement.getTypePeriode().name())) {
@@ -103,13 +105,19 @@ public class CabinetServiceImpl implements CabinetService {
     }
 
     @Override
+    public CabinetResponseDTO getCabinetByMedecinId(Long medecinId) {
+        Cabinet cabinet = cabinetRepository.findByMedecinId(medecinId)
+                .orElseThrow(() -> new RuntimeException("Cabinet not found for medecin with id: " + medecinId));
+        return cabinetMapper.toDto(cabinet);
+    }
+
+    @Override
     public CabinetResponseDTO getCabinet(Long id) {
         Cabinet cabinet = cabinetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cabinet not found with id: " + id));
 
         CabinetResponseDTO response = cabinetMapper.toDto(cabinet);
 
-        // Populate services
         List<ServiceConsultationDTO> services = serviceConsultationRepository.findByCabinetId(id).stream()
                 .map(cabinetMapper::toDto)
                 .collect(Collectors.toList());
@@ -175,11 +183,7 @@ public class CabinetServiceImpl implements CabinetService {
     public ServiceConsultationDTO getServiceById(Long cabinetId, Long serviceId) {
         log.info("Recherche du service avec ID: {} pour le cabinet ID: {}", serviceId, cabinetId);
 
-        // First verify cabinet exists
-        Cabinet cabinet = cabinetRepository.findById(cabinetId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cabinet non trouvé avec l'ID: " + cabinetId));
-
-        // Then find the service
+        // Find the service
         ServiceConsultation service = serviceConsultationRepository.findById(serviceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Service non trouvé avec l'ID: " + serviceId));
 
@@ -212,28 +216,7 @@ public class CabinetServiceImpl implements CabinetService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<PaiementResponseDTO> getAllPaiements() {
-        return paiementRepository.findAll().stream()
-                .map(p -> {
-                    String cabinetNom = "Unknown";
-                    String cabinetLogo = null;
-                    if (p.getAbonnement() != null && p.getAbonnement().getCabinet() != null) {
-                        cabinetNom = p.getAbonnement().getCabinet().getNom();
-                        cabinetLogo = p.getAbonnement().getCabinet().getLogo();
-                    }
-                    return PaiementResponseDTO.builder()
-                            .idPaiement(p.getIdPaiement())
-                            .datePaiement(p.getDatePaiement())
-                            .montant(p.getMontant())
-                            .statut(p.getStatut())
-                            .cabinetNom(cabinetNom)
-                            .cabinetLogo(cabinetLogo)
-                            .build();
-                })
-                .collect(Collectors.toList());
-    }
+
 
     @Override
     @Transactional
@@ -281,5 +264,119 @@ public class CabinetServiceImpl implements CabinetService {
             abonnement.getCabinet().setActif(true);
             cabinetRepository.save(abonnement.getCabinet());
         }
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public CabinetResponseDTO getCabinetByUserId(Long userId) {
+        log.info("Getting cabinet for user ID: {}", userId);
+
+        try {
+            // First, get user information to check their role
+            UtilisateurResponse user = medecinClient.getUtilisateurById(userId);
+            log.info("User found: {} {}, Role: {}", user.getPrenom(), user.getNom(), user.getRole());
+
+            Cabinet cabinet = null;
+
+            // Check user role and find cabinet accordingly
+            if ("MEDECIN".equalsIgnoreCase(user.getRole())) {
+                // For MEDECIN: use medecinId query
+                cabinet = cabinetRepository.findByMedecinId(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Cabinet not found for medecin with id: " + userId));
+            } else if ("SECRETAIRE".equalsIgnoreCase(user.getRole())) {
+                // For SECRETAIRE: check if user has cabinet_id
+                if (user.getIdCabinet() != null) {
+                    cabinet = cabinetRepository.findById(user.getIdCabinet())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Cabinet not found with id: " + user.getIdCabinet()));
+                } else {
+                    // If secretary doesn't have cabinet_id, find any active cabinet
+                    List<Cabinet> allCabinets = cabinetRepository.findAll();
+
+                    if (allCabinets.isEmpty()) {
+                        throw new ResourceNotFoundException("No cabinets found in system");
+                    }
+
+                    // Try to find a cabinet with active abonnement
+                    cabinet = allCabinets.stream()
+                            .filter(c -> c.getAbonnement() != null &&
+                                    "ACTIF".equals(c.getAbonnement().getStatut().name()))
+                            .findFirst()
+                            .orElse(allCabinets.get(0)); // Fallback to first cabinet
+
+                    log.warn("Secretary {} doesn't have cabinet_id, using cabinet: {}",
+                            userId, cabinet.getNom());
+                }
+            } else {
+                throw new ResourceNotFoundException(
+                        "User role " + user.getRole() + " not supported for cabinet access");
+            }
+
+            if (cabinet == null) {
+                throw new ResourceNotFoundException(
+                        "Cabinet not found for user with id: " + userId);
+            }
+
+            log.info("Found cabinet: {} (ID: {}) for user: {}",
+                    cabinet.getNom(), cabinet.getId(), userId);
+
+            return convertCabinetToDto(cabinet);
+
+        } catch (Exception e) {
+            log.error("Error getting cabinet for user ID: {}", userId, e);
+            throw new ResourceNotFoundException(
+                    "Failed to get cabinet for user ID: " + userId + ". Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public CabinetResponseDTO getCabinetForUser(Long userId) {
+        return getCabinetByUserId(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AbonnementResponseDTO> getAllAbonnements() {
+        return abonnementRepository.findAll().stream()
+                .map(abonnement -> {
+                    String cabinetNom = "Unknown";
+                    String cabinetLogo = null;
+                    if (abonnement.getCabinet() != null) {
+                        cabinetNom = abonnement.getCabinet().getNom();
+                        cabinetLogo = abonnement.getCabinet().getLogo();
+                    }
+
+                    return AbonnementResponseDTO.builder()
+                            .idAbonnement(abonnement.getIdAbonnement())
+                            .dateDebut(abonnement.getDateDebut())
+                            .dateFin(abonnement.getDateFin())
+                            .statut(abonnement.getStatut())
+                            .montant(abonnement.getMontant())
+                            .typePeriode(abonnement.getTypePeriode().name())
+                            .cabinetNom(cabinetNom)
+                            .cabinetLogo(cabinetLogo)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Helper method to convert cabinet to DTO with services
+     */
+    private CabinetResponseDTO convertCabinetToDto(Cabinet cabinet) {
+        CabinetResponseDTO response = cabinetMapper.toDto(cabinet);
+
+        // Populate services
+        List<ServiceConsultationDTO> services = serviceConsultationRepository
+                .findByCabinetId(cabinet.getId())
+                .stream()
+                .map(cabinetMapper::toDto)
+                .collect(Collectors.toList());
+        response.setServices(services);
+
+        return response;
     }
 }

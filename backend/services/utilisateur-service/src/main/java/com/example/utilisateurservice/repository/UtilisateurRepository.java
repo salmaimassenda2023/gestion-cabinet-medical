@@ -15,4 +15,6 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     List<Utilisateur> findByIdCabinet(Long idCabinet);
     List<Utilisateur> findByRole(Utilisateur.Role role);
     boolean existsByLogin(String login);
+
 }
+

@@ -44,7 +44,6 @@ public class Cabinet {
     @Column(name = "duree_consultation")
     private Integer dureeConsultation;
 
-    // @Column(name = "medecin_id")
     private Long medecinId;
 
     @Builder.Default
@@ -58,7 +57,6 @@ public class Cabinet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // One-to-One with Abonnement is implicitly handled by Logic or ID,
     @OneToOne(mappedBy = "cabinet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private AbonnementCabinet abonnement;
 

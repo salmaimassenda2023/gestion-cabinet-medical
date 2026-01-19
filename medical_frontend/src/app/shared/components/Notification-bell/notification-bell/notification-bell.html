@@ -1,0 +1,71 @@
+ <div class="notification-container" (click)="toggleDropdown($event)">
+            <div class="notification-icon" [class.has-notifications]="unreadCount > 0">
+                <i class="fas fa-bell"></i>
+                <span class="badge" *ngIf="unreadCount > 0">
+                    {{ unreadCount > 99 ? '99+' : unreadCount }}
+                </span>
+            </div>
+            
+            <div class="notification-dropdown" *ngIf="showDropdown" (click)="$event.stopPropagation()">
+                <div class="dropdown-header">
+                    <h3>Notifications</h3>
+                    <div class="header-actions">
+                        <button class="btn-mark-all" (click)="markAllAsRead()" *ngIf="unreadCount > 0">
+                            <i class="fas fa-check-double"></i> Tout marquer comme lu
+                        </button>
+                        <button class="btn-close" (click)="showDropdown = false">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="notification-list">
+                    <div *ngFor="let notification of notifications" 
+                         class="notification-item"
+                         [class.unread]="!notification.lu"
+                         [class.patient-suivant]="notification.type === 'PATIENT_SUIVANT'"
+                         (click)="handleNotificationClick(notification)">
+                        
+                        <div class="notification-icon-small">
+                            <i class="fas" 
+                               [class.fa-user-md]="notification.type === 'PATIENT_SUIVANT'"
+                               [class.fa-exclamation-triangle]="notification.type === 'ABONNEMENT_EXPIRE'"
+                               [class.fa-calendar]="notification.type === 'APPOINTMENT'"></i>
+                        </div>
+                        
+                        <div class="notification-content">
+                            <h4 [innerHTML]="notification.titre"></h4>
+                            <p *ngIf="notification.dossierPatient" class="patient-info">
+                                <i class="fas fa-user"></i>
+                                {{ notification.dossierPatient.nomComplet }}
+                                <span *ngIf="notification.dossierPatient.age">
+                                    • {{ notification.dossierPatient.age }} ans
+                                </span>
+                            </p>
+                            <p *ngIf="notification.message" class="notification-message">
+                                {{ notification.message }}
+                            </p>
+                            <span class="notification-time">
+                                {{ formatTime(notification.dateEnvoi) }}
+                            </span>
+                        </div>
+                        
+                        <div class="notification-actions">
+                            <span class="unread-dot" *ngIf="!notification.lu"></span>
+                            <button class="btn-action" (click)="markAsRead(notification.id); $event.stopPropagation()">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="empty-notifications" *ngIf="notifications.length === 0">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>Aucune notification</p>
+                    </div>
+                </div>
+                
+                <div class="dropdown-footer" *ngIf="notifications.length > 0">
+                    <span>{{ unreadCount }} non lu(s)</span>
+                </div>
+            </div>
+        </div>

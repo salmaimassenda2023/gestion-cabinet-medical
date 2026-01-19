@@ -16,6 +16,17 @@
     --cyan-900: rgba(22, 78, 99, 0.1);
 }
 
+/* doctor-dashboard.css - Loading styles */
+.stats-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: white;
+    gap: 1rem;
+}
+
 .doctor-portal {
     display: flex;
     height: 100vh;

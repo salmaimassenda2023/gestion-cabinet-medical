@@ -6,12 +6,12 @@
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ConsultationCreateDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ConsultationPatientResponseDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ConsultationResponseDTO.java
+/Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ConsultationServiceItemDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ConsultationUpdateDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ExamenCliniqueCreateDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ExamenCliniqueDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/FactureCreateDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/FactureDTO.java
-/Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/FactureGenerationDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/LigneOrdonnanceExamenCreateDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/LigneOrdonnanceExamenDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/LigneOrdonnanceMedicamentCreateDTO.java
@@ -23,6 +23,7 @@
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/OrdonnanceMedicamentDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/dto/ServiceConsultationDTO.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/entity/Consultation.java
+/Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/entity/ConsultationServiceItem.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/entity/ExamenClinique.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/entity/Facture.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/entity/LigneOrdonnanceExamen.java
@@ -34,6 +35,7 @@
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/exception/DuplicateResourceException.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/exception/GlobalExceptionHandler.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/exception/ResourceNotFoundException.java
+/Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/exception/ServiceValidationException.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/exception/ValidationException.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/mapper/ConsultationMapper.java
 /Users/farah/Documents/Projects/gestion-cabinet-medical/backend/services/consultation-service/src/main/java/com/example/consultationservice/mapper/ExamenCliniqueMapper.java

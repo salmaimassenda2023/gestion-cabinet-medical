@@ -1,152 +1,84 @@
 <div class="payments-container">
-    <div class="payments-header">
-        <div class="header-info">
-            <h1>Financial Management</h1>
-            <p>Recent transactions and invoicing</p>
-        </div>
-        <button class="btn-primary" (click)="openPayModal()">
-            <i class="fas fa-plus"></i> New Payment
-        </button>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading payment data...</p>
     </div>
 
-    <div class="table-card">
-        <table class="payments-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Patient Name</th>
-                    <th>Date</th>
-                    <th>Total Price</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngFor="let p of payments">
-                    <td>#{{ p.idFacture }}</td>
-                    <td class="patient-name">{{ p.patientName }}</td>
-                    <td>{{ p.dateFacture | date:'dd/MM/yyyy' }}</td>
-                    <td class="price">{{ p.montantTotal }} MAD</td>
-                    <td>
-                        <span class="status-tag" [class]="p.statut">
-                            {{ p.statut }}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn-icon bill" (click)="currentBill = p; isBillModalOpen = true"
-                            title="View Bill">
-                            <i class="fas fa-file-invoice-dollar"></i>
-                        </button>
-                    </td>
-                </tr>
-                <tr *ngIf="payments.length === 0">
-                    <td colspan="6" class="no-data">No transactions found.</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Main Content -->
+    <div *ngIf="!isLoading">
+        <!-- Header -->
+        <div class="payments-header">
+            <div class="header-info">
+                <h1>
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Financial Management
+                </h1>
+                <p>Manage invoices and payments</p>
+            </div>
+            <button class="btn-primary" (click)="openPaymentForm()">
+                <i class="fas fa-plus"></i> Process New Payment
+            </button>
+        </div>
+
+        <!-- Payments Table -->
+        <div class="table-card">
+            <table class="payments-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Patient</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let payment of payments">
+                        <td class="invoice-id">#{{ payment.idFacture }}</td>
+                        <td class="patient-name">
+                            <i class="fas fa-user-circle"></i>
+                            {{ payment.patientName }}
+                        </td>
+                        <td>{{ formatDate(payment.dateFacture) }}</td>
+                        <td class="amount">{{ payment.montantTotal }} MAD</td>
+                        <td>
+                            <span class="status-badge" [class]="payment.statut?.toLowerCase()">
+                                {{ payment.statut }}
+                            </span>
+                        </td>
+                        <td class="actions">
+
+                            <button class="btn-icon download" (click)="downloadPDF(payment.idFacture)"
+                                title="Download PDF">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn-icon status" *ngIf="payment.statut === 'EN_ATTENTE'"
+                                (click)="updateStatus(payment, 'PAYEE')" title="Mark as Paid">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="btn-icon delete" (click)="openDeleteModal(payment)" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="payments.length === 0">
+                        <td colspan="6" class="no-data">
+                            <i class="fas fa-inbox"></i>
+                            <p>No invoices found</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Payment Modal -->
-    <app-modal [isOpen]="isPayModalOpen" title="Process New Payment" [showFooter]="false"
-        (close)="isPayModalOpen = false">
-        <div class="payment-setup">
-            <div class="form-group">
-                <label>Select Patient</label>
-                <select [(ngModel)]="selectedPatientId" (change)="onPatientChange()">
-                    <option [ngValue]="undefined">Select a patient</option>
-                    <option *ngFor="let p of patients" [value]="p.id">{{ p.nom }} {{ p.prenom }}</option>
-                </select>
-            </div>
+    <app-payment-form [isOpen]="isPaymentFormOpen" [cabinetId]="currentCabinetId" (close)="closePaymentForm()"
+        (paymentCreated)="onPaymentCreated($event)">
+    </app-payment-form>
 
-            <div class="form-group" *ngIf="selectedPatientId">
-                <label>Select Consultation</label>
-                <select [(ngModel)]="selectedConsultationId">
-                    <option [ngValue]="undefined">Select a consultation</option>
-                    <ng-container *ngFor="let c of consultations">
-                        <option *ngIf="c.idPatient == selectedPatientId" [value]="c.idConsultation">
-                            Consultation on {{ c.dateConsultation | date:'dd/MM/yyyy HH:mm' }}
-                        </option>
-                    </ng-container>
-                </select>
-            </div>
 
-            <div class="services-selection" *ngIf="selectedConsultationId">
-                <label>Select Additional Services</label>
-                <div class="services-grid">
-                    <div *ngFor="let service of availableServices" class="service-item"
-                        [class.selected]="isServiceSelected(service)" (click)="toggleService(service)">
-                        <div class="service-info">
-                            <span class="name">{{ service.nomService }}</span>
-                            <span class="price">{{ service.prix }} MAD</span>
-                        </div>
-                        <div class="checkbox">
-                            <i class="fas fa-check" *ngIf="isServiceSelected(service)"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="payment-summary" *ngIf="selectedConsultationId">
-                <div class="summary-line">
-                    <span>Base Consultation</span>
-                    <span>{{ consultationBasePrice }} MAD</span>
-                </div>
-                <div class="summary-line highlight">
-                    <span>Total Amount</span>
-                    <span>{{ currentTotal }} MAD</span>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button type="button" class="btn-secondary" (click)="isPayModalOpen = false">Cancel</button>
-                <button type="button" class="btn-primary" (click)="processPayment()"
-                    [disabled]="!selectedConsultationId">
-                    Confirm & Generate Bill
-                </button>
-            </div>
-        </div>
-    </app-modal>
-
-    <!-- Bill Modal (The Invoice) -->
-    <app-modal [isOpen]="isBillModalOpen" title="Payment Receipt" [showFooter]="false"
-        (close)="isBillModalOpen = false">
-        <div class="bill-receipt" *ngIf="currentBill" id="printable-bill">
-            <div class="bill-header">
-                <div class="clinic-info">
-                    <h2>MEDICAL CENTER</h2>
-                    <p>Financial Document</p>
-                </div>
-                <div class="receipt-meta">
-                    <p><strong>Facture #:</strong> {{ currentBill.idFacture }}</p>
-                    <p><strong>Date:</strong> {{ currentBill.dateFacture | date:'dd/MM/yyyy HH:mm' }}</p>
-                </div>
-            </div>
-
-            <div class="bill-body">
-                <h3>Patient: {{ currentBill.patientName }}</h3>
-                <div class="bill-table">
-                    <div class="bill-row header">
-                        <span>Description</span>
-                        <span>Price</span>
-                    </div>
-                    <div class="bill-row" *ngFor="let s of currentBill.services">
-                        <span>{{ s.nomService }}</span>
-                        <span>{{ s.prix }} MAD</span>
-                    </div>
-                    <div class="bill-total">
-                        <span>TOTAL</span>
-                        <span>{{ currentBill.montantTotal }} MAD</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bill-footer">
-                <p>Status: <strong>{{ currentBill.statut }}</strong></p>
-                <p>Thank you for your visit!</p>
-                <button class="btn-print no-print" (click)="printBill()">
-                    <i class="fas fa-print"></i> Download & Print Invoice
-                </button>
-            </div>
-        </div>
-    </app-modal>
 </div>

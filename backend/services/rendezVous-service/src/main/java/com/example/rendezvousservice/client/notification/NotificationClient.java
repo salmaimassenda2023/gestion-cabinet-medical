@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  */
 @FeignClient(
         name = "notification-service",
-        url = "http://localhost:8086",  // ✅ URL sans path
+        url = "http://localhost:8086",  
         fallback = NotificationClientFallback.class
 )
 public interface NotificationClient {

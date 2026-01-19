@@ -1,28 +1,29 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { AuthService } from '../services/auth.service';
 
 export const jwtInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, next: HttpHandlerFn) => {
     console.log('🔄 JWT Interceptor - URL:', req.url, 'Method:', req.method);
 
-    // const authService = inject(AuthService); // avoid circular dependency
     const token = localStorage.getItem('auth_token');
 
     // Define public endpoints (no token needed)
     const publicEndpoints = [
-        { method: 'POST', pattern: /\/api\/cabinet$/ },
-        { method: 'POST', pattern: /\/api\/utilisateur\/users\/register\/medecin$/ },
-        { method: 'POST', pattern: /\/api\/utilisateur\/users\/bootstrap/ },
-        { method: 'PATCH', pattern: /\/api\/utilisateur\/users\/\d+\/cabinet$/ },
-        { method: 'POST', pattern: /protocol\/openid-connect\/token/ },
+        '/api/utilisateur/users/register/medecin',
+        '/api/cabinet',
+        '/api/utilisateur/users/bootstrap',
+        '/protocol/openid-connect/token'
     ];
 
-    // Check if this is a public endpoint
-    const isPublic = publicEndpoints.some(endpoint =>
-        req.method === endpoint.method && endpoint.pattern.test(req.url)
+    // Check if this is a public endpoint using includes (more reliable)
+    const isPublic = publicEndpoints.some(endpoint => 
+        req.url.includes(endpoint)
     );
 
-    if (isPublic) {
+    // Also check for PATCH requests to user cabinet
+    const isUserCabinetPatch = req.method === 'PATCH' && 
+                               req.url.includes('/api/utilisateur/users/') && 
+                               req.url.includes('/cabinet');
+
+    if (isPublic || isUserCabinetPatch) {
         console.log('⏭️ Skipping token for public endpoint:', req.url);
         return next(req);
     }

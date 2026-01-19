@@ -1,6 +1,5 @@
 package com.example.rendezvousservice.service;
 
-
 import com.example.rendezvousservice.dto.*;
 
 import java.time.LocalDate;
@@ -21,7 +20,13 @@ public interface IRendezVousService {
      *
      * @param dto les données du rendez-vous à créer
      * @return le rendez-vous créé avec toutes les informations
-     * @throws com.example.rendezvousservice.exception.RendezVousException si le créneau est occupé ou si patient/médecin introuvable
+     * @throws com.example.rendezvousservice.exception.RendezVousException si le
+     *                                                                     créneau
+     *                                                                     est
+     *                                                                     occupé ou
+     *                                                                     si
+     *                                                                     patient/médecin
+     *                                                                     introuvable
      */
     RendezVousDTO createRendezVous(CreateRendezVousDTO dto);
 
@@ -30,7 +35,10 @@ public interface IRendezVousService {
      *
      * @param id l'identifiant du rendez-vous
      * @return le rendez-vous avec les informations patient et médecin
-     * @throws com.example.rendezvousservice.exception.RendezVousException si le rendez-vous n'existe pas
+     * @throws com.example.rendezvousservice.exception.RendezVousException si le
+     *                                                                     rendez-vous
+     *                                                                     n'existe
+     *                                                                     pas
      */
     RendezVousDTO getRendezVous(Long id);
 
@@ -39,10 +47,12 @@ public interface IRendezVousService {
      * Vérifie que le rendez-vous peut être modifié (pas terminé ou annulé).
      * Si changement de créneau, vérifie la disponibilité.
      *
-     * @param id l'identifiant du rendez-vous
+     * @param id  l'identifiant du rendez-vous
      * @param dto les nouvelles données du rendez-vous
      * @return le rendez-vous mis à jour
-     * @throws com.example.rendezvousservice.exception.RendezVousException si modification impossible
+     * @throws com.example.rendezvousservice.exception.RendezVousException si
+     *                                                                     modification
+     *                                                                     impossible
      */
     RendezVousDTO updateRendezVous(Long id, UpdateRendezVousDTO dto);
 
@@ -52,17 +62,22 @@ public interface IRendezVousService {
      * Envoie une notification d'annulation au patient.
      *
      * @param id l'identifiant du rendez-vous à annuler
-     * @throws com.example.rendezvousservice.exception.RendezVousException si annulation impossible
+     * @throws com.example.rendezvousservice.exception.RendezVousException si
+     *                                                                     annulation
+     *                                                                     impossible
      */
     void deleteRendezVous(Long id);
 
     /**
      * Change le statut d'un rendez-vous.
      *
-     * @param id l'identifiant du rendez-vous
+     * @param id  l'identifiant du rendez-vous
      * @param dto le nouveau statut et éventuellement des remarques
      * @return le rendez-vous avec le statut mis à jour
-     * @throws com.example.rendezvousservice.exception.RendezVousException si le rendez-vous n'existe pas
+     * @throws com.example.rendezvousservice.exception.RendezVousException si le
+     *                                                                     rendez-vous
+     *                                                                     n'existe
+     *                                                                     pas
      */
     RendezVousDTO changeStatut(Long id, ChangeStatutDTO dto);
 
@@ -77,10 +92,11 @@ public interface IRendezVousService {
     List<RendezVousDTO> getRendezVousByPatient(Long patientId);
 
     /**
-     * Récupère tous les rendez-vous d'un médecin pour une date donnée (sauf annulés).
+     * Récupère tous les rendez-vous d'un médecin pour une date donnée (sauf
+     * annulés).
      *
      * @param medecinId l'identifiant du médecin
-     * @param date la date recherchée
+     * @param date      la date recherchée
      * @return la liste des rendez-vous du médecin pour cette date
      */
     List<RendezVousDTO> getRendezVousByMedecinAndDate(Long medecinId, LocalDate date);
@@ -100,7 +116,7 @@ public interface IRendezVousService {
      * Génère des créneaux de 30 minutes entre 8h et 18h.
      *
      * @param medecinId l'identifiant du médecin
-     * @param date la date recherchée
+     * @param date      la date recherchée
      * @return la liste des créneaux avec leur disponibilité
      */
     DisponibilitesDTO getDisponibilites(Long medecinId, LocalDate date);
@@ -123,7 +139,11 @@ public interface IRendezVousService {
      *
      * @param rendezVousId l'identifiant du rendez-vous
      * @return le rendez-vous mis à jour
-     * @throws com.example.rendezvousservice.exception.RendezVousException si le rendez-vous ne peut pas être ajouté
+     * @throws com.example.rendezvousservice.exception.RendezVousException si le
+     *                                                                     rendez-vous
+     *                                                                     ne peut
+     *                                                                     pas être
+     *                                                                     ajouté
      */
     RendezVousDTO ajouterEnListeAttente(Long rendezVousId);
 
@@ -134,7 +154,10 @@ public interface IRendezVousService {
      *
      * @param rendezVousId l'identifiant du rendez-vous
      * @return le rendez-vous mis à jour
-     * @throws com.example.rendezvousservice.exception.RendezVousException si le rendez-vous n'existe pas
+     * @throws com.example.rendezvousservice.exception.RendezVousException si le
+     *                                                                     rendez-vous
+     *                                                                     n'existe
+     *                                                                     pas
      */
     RendezVousDTO retirerDeListeAttente(Long rendezVousId);
 
@@ -143,8 +166,7 @@ public interface IRendezVousService {
      * Retourne le patient avec le plus petit ordre de passage.
      *
      * @param medecinId l'identifiant du médecin
-     * @return le prochain patient à consulter
-     * @throws com.example.rendezvousservice.exception.RendezVousException si aucun patient en attente
+     * @return le prochain patient à consulter ou null si aucun patient en attente
      */
     RendezVousDTO getPatientSuivant(Long medecinId);
 }

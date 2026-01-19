@@ -8,9 +8,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-/**
- * DTO pour la création d'un paiement
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

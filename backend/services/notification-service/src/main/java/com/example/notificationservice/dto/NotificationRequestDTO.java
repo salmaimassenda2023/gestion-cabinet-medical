@@ -13,11 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class NotificationRequestDTO {
     private Long userId;
-    private Long adminId; // alternative for generic user id
+    private Long adminId; 
     private String type;
     private String titre;
     private DossierPatientDTO dossierPatient;
     private AbonnementExpirationNotificationDTO abonnement;
+    private Long cabinetId;
 
     // Helper to get the target ID regardless of field used
     public Long getTargetId() {

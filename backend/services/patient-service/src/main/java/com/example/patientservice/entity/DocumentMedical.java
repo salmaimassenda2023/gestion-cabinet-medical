@@ -24,7 +24,7 @@ public class DocumentMedical {
     private Long idDocument;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dossier_medical_id", nullable = false)  // ✅ Référence maintenant patient_id
+    @JoinColumn(name = "dossier_medical_id", nullable = false)  
     private DossierMedical dossierMedical;
 
     @Column(nullable = false)

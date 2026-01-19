@@ -1,6 +1,5 @@
 package com.example.patientservice.entity;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,13 +19,12 @@ import java.util.List;
 @AllArgsConstructor
 public class DossierMedical {
 
-    // ✅ Utilise l'ID du patient comme PK (Shared Primary Key)
     @Id
     @Column(name = "patient_id")
     private Long id;
 
     @OneToOne
-    @MapsId  // ✅ Clé importante : partage l'ID avec Patient
+    @MapsId 
     @JoinColumn(name = "patient_id")
     private Patient patient;
 

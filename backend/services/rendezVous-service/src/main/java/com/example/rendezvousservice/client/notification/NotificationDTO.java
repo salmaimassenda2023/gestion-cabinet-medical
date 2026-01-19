@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationDTO {
-    private Long userId; // ID du médecin
-    private String type; // "PATIENT_SUIVANT"
-    private String titre; // "Patient Suivant"
-    private NotificationDossierDTO dossierPatient; // Dossier complet pour le médecin
+    private Long userId; 
+    private String type; 
+    private String titre; 
+    private NotificationDossierDTO dossierPatient; 
 }

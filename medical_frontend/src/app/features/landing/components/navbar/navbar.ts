@@ -14,7 +14,6 @@ export class NavbarComponent {
   isScrolled = signal(false);
   isMobileMenuOpen = signal(false);
 
-  // Expose icons to template
   readonly MenuIcon = Menu;
   readonly XIcon = X;
 

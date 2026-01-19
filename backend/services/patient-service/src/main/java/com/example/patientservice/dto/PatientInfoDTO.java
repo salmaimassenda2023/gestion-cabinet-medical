@@ -8,15 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * DTO léger pour les informations basiques du patient.
- * Utilisé par les autres microservices pour éviter de transférer le dossier médical.
- *
- *  Avantages :
- * - Plus rapide (moins de données)
- * - Optimisé pour les listes
- * - Pas de surcharge réseau
- */
+
 @Data
 @Builder
 @NoArgsConstructor

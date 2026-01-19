@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class NotificationDTO {
     private Long adminId;
-    private String type; // "ABONNEMENT_EXPIRE"
+    private String type; 
     private String titre;
     private AbonnementExpirationDTO abonnement;
 

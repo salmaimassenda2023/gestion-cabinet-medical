@@ -10,9 +10,14 @@
                 <h1 class="welcome-text">Welcome Doctor, {{ doctorName }}</h1>
             </div>
         </div>
+        <app-notification-bell></app-notification-bell>
 
         <div class="stats-vertical-list">
-            <div class="large-stat-card" *ngFor="let stat of statsItems">
+            <div *ngIf="isLoadingStats" class="stats-loader">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading stats...</p>
+            </div>
+            <div class="large-stat-card" *ngFor="let stat of statsItems" [hidden]="isLoadingStats">
                 <div class="stat-icon-bg">
                     <i [class]="getIconClass(stat.icon)"></i>
                 </div>

@@ -1,26 +1,58 @@
 <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="appointment-form">
-    <div class="form-group">
-        <label for="patientId">Patient</label>
-        <select id="patientId" formControlName="patientId">
-            <option value="" disabled>Select a patient</option>
-            <option *ngFor="let p of patients" [value]="p.id">{{ p.prenom }} {{ p.nom }} ({{ p.cin }})</option>
+    <!-- Patient Selection - Only visible in create mode -->
+    <div class="form-group" *ngIf="!isEditMode">
+        <label for="patientId">Patient <span class="required">*</span></label>
+        <select id="patientId" formControlName="patientId" class="form-control">
+            <option value="" disabled selected>Sélectionner un patient</option>
+            <option *ngFor="let p of patients" [value]="p.id">
+                {{ p.prenom || 'No first name' }} {{ p.nom || 'No last name' }} 
+                ({{ p.cin || 'No CIN' }})
+            </option>
         </select>
+        
+        <div *ngIf="patients.length === 0" class="info-message">
+            ⚠️ Aucun patient trouvé dans ce cabinet. Veuillez d'abord ajouter des patients.
+        </div>
+        
+        <div *ngIf="appointmentForm.get('patientId')?.touched && appointmentForm.get('patientId')?.invalid" 
+             class="error-message">
+            Veuillez sélectionner un patient
+        </div>
     </div>
 
+    <!-- Patient Info Display - Only visible in edit mode -->
+    <div class="form-group info-display" *ngIf="isEditMode && appointment">
+        <label>Patient</label>
+        <div class="patient-info-display">
+            <i class="fas fa-user-circle"></i>
+            <span>{{ appointment.patientName || 'Patient #' + appointment.idPatient }}</span>
+        </div>
+    </div>
+
+    <!-- Date and Time -->
     <div class="form-row">
         <div class="form-group">
-            <label for="date">Date</label>
-            <input type="date" id="date" formControlName="date">
+            <label for="date">Date <span class="required">*</span></label>
+            <input type="date" id="date" formControlName="date" class="form-control">
+            <div *ngIf="appointmentForm.get('date')?.touched && appointmentForm.get('date')?.invalid" 
+                 class="error-message">
+                Date requise
+            </div>
         </div>
         <div class="form-group">
-            <label for="hour">Hour</label>
-            <input type="time" id="hour" formControlName="hour">
+            <label for="hour">Heure <span class="required">*</span></label>
+            <input type="time" id="hour" formControlName="hour" class="form-control">
+            <div *ngIf="appointmentForm.get('hour')?.touched && appointmentForm.get('hour')?.invalid" 
+                 class="error-message">
+                Heure requise
+            </div>
         </div>
     </div>
 
+    <!-- Type -->
     <div class="form-group">
-        <label for="type">Type</label>
-        <select id="type" formControlName="type">
+        <label for="type">Type <span class="required">*</span></label>
+        <select id="type" formControlName="type" class="form-control">
             <option value="CONSULTATION">Consultation</option>
             <option value="CONTROLE">Contrôle</option>
             <option value="URGENCE">Urgence</option>
@@ -28,17 +60,44 @@
         </select>
     </div>
 
-    <div class="form-group">
-        <label for="note">Note</label>
-        <textarea id="note" formControlName="note" rows="3" placeholder="Add notes..."></textarea>
+    <!-- Status - Only visible in edit mode -->
+    <div class="form-group" *ngIf="isEditMode">
+        <label for="statut">Statut <span class="required">*</span></label>
+        <select id="statut" formControlName="statut" class="form-control">
+            <option *ngFor="let status of statusOptions" [value]="status.value">
+                {{ status.label }}
+            </option>
+        </select>
+        <div class="status-info" *ngIf="appointment?.statut === 'PLANIFIE'">
+            <i class="fas fa-info-circle"></i>
+            <span>Vous pouvez confirmer ou annuler ce rendez-vous planifié</span>
+        </div>
+        <div *ngIf="appointmentForm.get('statut')?.touched && appointmentForm.get('statut')?.invalid" 
+             class="error-message">
+            Veuillez sélectionner un statut
+        </div>
     </div>
 
+    <!-- Note -->
+    <div class="form-group">
+        <label for="note">Note</label>
+        <textarea id="note" formControlName="note" rows="3" 
+                  placeholder="Ajouter des notes..." class="form-control"></textarea>
+    </div>
+
+    <!-- Form Actions -->
     <div class="form-actions">
-        <button type="button" class="btn-delete" *ngIf="appointment" (click)="onDelete()">Delete</button>
+        <button type="button" class="btn-delete" *ngIf="isEditMode" (click)="onDelete()">
+            <i class="fas fa-trash"></i> Supprimer
+        </button>
         <div class="spacer"></div>
-        <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
-        <button type="submit" class="btn-primary" [disabled]="appointmentForm.invalid">
-            {{ appointment ? 'Update Appointment' : 'Add Appointment' }}
+        <button type="button" class="btn-secondary" (click)="onCancel()">
+            Annuler
+        </button>
+        <button type="submit" class="btn-primary" 
+                [disabled]="appointmentForm.invalid || isLoading">
+            <i class="fas" [class.fa-plus]="!isEditMode" [class.fa-save]="isEditMode"></i>
+            {{ isLoading ? 'Chargement...' : (isEditMode ? 'Mettre à jour' : 'Ajouter') }}
         </button>
     </div>
 </form>

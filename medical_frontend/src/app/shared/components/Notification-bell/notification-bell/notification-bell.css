@@ -1,0 +1,261 @@
+.notification-container {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .notification-icon {
+            position: relative;
+            font-size: 1.2rem;
+            color: #4a5568;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .notification-icon:hover {
+            background: #f7fafc;
+        }
+        
+        .notification-icon.has-notifications {
+            color: #3182ce;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #e53e3e;
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .notification-dropdown {
+            position: absolute;
+            top: 45px;
+            right: 0;
+            width: 380px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .dropdown-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dropdown-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn-mark-all {
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.2s;
+        }
+        
+        .btn-mark-all:hover {
+            background: #2c5282;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            color: #718096;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .btn-close:hover {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .notification-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            transition: background 0.2s;
+            gap: 12px;
+        }
+        
+        .notification-item:hover {
+            background: #f8fafc;
+        }
+        
+        .notification-item.unread {
+            background: #ebf8ff;
+        }
+        
+        .notification-item.patient-suivant {
+            border-left: 4px solid #38b2ac;
+        }
+        
+        .notification-icon-small {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .notification-item.patient-suivant .notification-icon-small {
+            background: linear-gradient(135deg, #38b2ac 0%, #319795 100%);
+        }
+        
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .notification-content h4 {
+            margin: 0 0 6px 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2d3748;
+            line-height: 1.4;
+        }
+        
+        .patient-info {
+            margin: 4px 0;
+            font-size: 0.85rem;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .notification-message {
+            margin: 6px 0;
+            font-size: 0.85rem;
+            color: #718096;
+            line-height: 1.4;
+        }
+        
+        .notification-time {
+            font-size: 0.75rem;
+            color: #a0aec0;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        .notification-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        .unread-dot {
+            width: 10px;
+            height: 10px;
+            background: #3182ce;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .btn-action {
+            background: #e2e8f0;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #718096;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-action:hover {
+            background: #3182ce;
+            color: white;
+        }
+        
+        .empty-notifications {
+            padding: 40px 20px;
+            text-align: center;
+            color: #a0aec0;
+        }
+        
+        .empty-notifications i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .empty-notifications p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .dropdown-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 0.85rem;
+            color: #718096;
+            text-align: center;
+        }

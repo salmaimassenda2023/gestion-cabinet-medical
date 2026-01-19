@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class NotificationDossierDTO {
     // Patient Info
+    private Long idPatient;
     private String nom;
     private String prenom;
     private String email;

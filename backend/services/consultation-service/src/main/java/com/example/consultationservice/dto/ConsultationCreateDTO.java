@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-// ============ Consultation DTOs ============
 
 @Data
 @Builder

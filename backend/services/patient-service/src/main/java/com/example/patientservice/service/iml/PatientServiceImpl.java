@@ -58,13 +58,13 @@ public class PatientServiceImpl implements PatientService {
         dossierMedicalRepository.save(dossierMedical);
         patient.setDossierMedical(dossierMedical);
 
-        log.info("✅ Patient créé avec succès: ID={}", patient.getId());
+        log.info("Patient créé avec succès: ID={}", patient.getId());
         return patientMapper.toDto(patient);
     }
     @Override
     @Transactional(readOnly = true)
     public PatientInfoDTO getPatientInfo(Long id) {
-        log.info("📋 Récupération des infos basiques du patient ID: {}", id);
+        log.info("Récupération des infos basiques du patient ID: {}", id);
 
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -86,7 +86,7 @@ public class PatientServiceImpl implements PatientService {
                 .idCabinet(patient.getIdCabinet())
                 .build();
 
-        log.info("✅ Infos basiques récupérées: {} {}",
+        log.info("Infos basiques récupérées: {} {}",
                 patient.getPrenom(), patient.getNom());
 
         return dto;
@@ -114,6 +114,9 @@ public class PatientServiceImpl implements PatientService {
         if (dto.getAdresse() != null) patient.setAdresse(dto.getAdresse());
         if (dto.getTypeMutuelle() != null) patient.setTypeMutuelle(dto.getTypeMutuelle());
         if (dto.getNumeroMutuelle() != null) patient.setNumeroMutuelle(dto.getNumeroMutuelle());
+        if (dto.getSexe() != null) patient.setSexe(dto.getSexe());
+        if (dto.getDateNaissance() != null) patient.setDateNaissance(dto.getDateNaissance());
+        if (dto.getCin() != null) patient.setCin(dto.getCin());
 
         Patient updatedPatient = patientRepository.save(patient);
         return patientMapper.toDto(updatedPatient);
@@ -126,7 +129,7 @@ public class PatientServiceImpl implements PatientService {
             throw new ResourceNotFoundException("Patient non trouvé avec l'ID: " + id);
         }
         patientRepository.deleteById(id);
-        log.info("✅ Patient supprimé: ID={}", id);
+        log.info("Patient supprimé: ID={}", id);
     }
 
     @Override
@@ -223,7 +226,7 @@ public class PatientServiceImpl implements PatientService {
                     .build();
 
             document = documentMedicalRepository.save(document);
-            log.info("✅ Document uploadé: {}", filename);
+            log.info("Document uploadé: {}", filename);
 
             return patientMapper.toDto(document);
 
@@ -258,6 +261,6 @@ public class PatientServiceImpl implements PatientService {
         }
 
         documentMedicalRepository.delete(document);
-        log.info("✅ Document supprimé: ID={}", documentId);
+        log.info("Document supprimé: ID={}", documentId);
     }
 }

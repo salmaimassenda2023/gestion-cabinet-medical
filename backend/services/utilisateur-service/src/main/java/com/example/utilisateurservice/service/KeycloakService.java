@@ -5,7 +5,6 @@ import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -86,9 +85,9 @@ public class KeycloakService {
                     .get(role.name()).toRepresentation();
             userResource.roles().realmLevel().add(Collections.singletonList(roleRepresentation));
 
-            log.info("✅ Rôle {} assigné à l'utilisateur {}", role, userId);
+            log.info("Rôle {} assigné à l'utilisateur {}", role, userId);
         } catch (Exception e) {
-            log.error("❌ Erreur lors de l'assignation du rôle", e);
+            log.error("Erreur lors de l'assignation du rôle", e);
             throw new RuntimeException("Erreur lors de l'assignation du rôle: " + e.getMessage());
         }
     }
@@ -96,9 +95,9 @@ public class KeycloakService {
     public void deleteUser(String keycloakId) {
         try {
             realmResource.users().get(keycloakId).remove();
-            log.info("✅ Utilisateur supprimé de Keycloak: {}", keycloakId);
+            log.info("Utilisateur supprimé de Keycloak: {}", keycloakId);
         } catch (Exception e) {
-            log.error("❌ Erreur lors de la suppression de l'utilisateur dans Keycloak", e);
+            log.error("Erreur lors de la suppression de l'utilisateur dans Keycloak", e);
             throw new RuntimeException("Erreur Keycloak: " + e.getMessage());
         }
     }
@@ -112,9 +111,9 @@ public class KeycloakService {
             user.setEmail(email);
             userResource.update(user);
 
-            log.info("✅ Utilisateur mis à jour dans Keycloak: {}", keycloakId);
+            log.info("Utilisateur mis à jour dans Keycloak: {}", keycloakId);
         } catch (Exception e) {
-            log.error("❌ Erreur lors de la mise à jour de l'utilisateur dans Keycloak", e);
+            log.error("Erreur lors de la mise à jour de l'utilisateur dans Keycloak", e);
             throw new RuntimeException("Erreur Keycloak: " + e.getMessage());
         }
     }
@@ -128,9 +127,9 @@ public class KeycloakService {
             credential.setTemporary(false);
             userResource.resetPassword(credential);
 
-            log.info("✅ Mot de passe mis à jour pour l'utilisateur: {}", keycloakId);
+            log.info("Mot de passe mis à jour pour l'utilisateur: {}", keycloakId);
         } catch (Exception e) {
-            log.error("❌ Erreur lors de la mise à jour du mot de passe", e);
+            log.error("Erreur lors de la mise à jour du mot de passe", e);
             throw new RuntimeException("Erreur Keycloak: " + e.getMessage());
         }
     }
@@ -142,9 +141,9 @@ public class KeycloakService {
             user.setEnabled(enabled);
             userResource.update(user);
 
-            log.info("✅ Statut utilisateur mis à jour dans Keycloak: {} -> {}", keycloakId, enabled);
+            log.info("Statut utilisateur mis à jour dans Keycloak: {} -> {}", keycloakId, enabled);
         } catch (Exception e) {
-            log.error("❌ Erreur lors de la mise à jour du statut dans Keycloak", e);
+            log.error("Erreur lors de la mise à jour du statut dans Keycloak", e);
             throw new RuntimeException("Erreur Keycloak: " + e.getMessage());
         }
     }

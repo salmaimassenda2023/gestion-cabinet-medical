@@ -15,13 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-import static org.apache.http.client.utils.DateUtils.formatDate;
 
-/**
- * Service de génération de PDF
- * Responsabilité: Créer des documents PDF (Single Responsibility)
- * Utilise OpenPDF (iText fork) pour la génération
- */
 @Service
 @Slf4j
 public class PDFGeneratorServiceImpl implements PDFGeneratorService {
@@ -147,10 +141,7 @@ public class PDFGeneratorServiceImpl implements PDFGeneratorService {
     /**
      * Génère un PDF pour une facture
      */
-    /**
-     * Updated generateFacturePDF method for PDFGeneratorServiceImpl
-     * This generates a comprehensive invoice with all services
-     */
+    
     @Override
     public byte[] generateFacturePDF(Facture facture, ConsultationPatientResponseDTO patient) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -339,12 +330,5 @@ public class PDFGeneratorServiceImpl implements PDFGeneratorService {
         }
     }
 
-    private String getStatutLabel(String statut) {
-        switch (statut) {
-            case "EN_ATTENTE": return "En attente";
-            case "PAYEE": return "Payée";
-            case "ANNULEE": return "Annulée";
-            default: return statut;
-        }
-    }
+   
 }

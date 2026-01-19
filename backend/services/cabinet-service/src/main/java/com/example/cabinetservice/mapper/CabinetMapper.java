@@ -24,8 +24,7 @@ public class CabinetMapper {
                 .maxPatientsJour(dto.getMaxPatientsJour())
                 .dureeConsultation(dto.getDureeConsultation())
                 .medecinId(dto.getMedecinId())
-                .actif(true) // Default to active or false based on logic, let's say true initially or
-                             // handled by service
+                .actif(true) 
                 .build();
     }
 
@@ -44,10 +43,6 @@ public class CabinetMapper {
                 .dureeConsultation(cabinet.getDureeConsultation())
                 .actif(cabinet.getActif())
                 .abonnement(toDto(cabinet.getAbonnement()))
-                // services will be populated separately if not lazily loaded or if managed via
-                // a separate call
-                // For now, let's assume we might set it, but basic mapping might not fetch it
-                // if it's not loaded
                 .services(null)
                 .build();
     }
@@ -59,7 +54,7 @@ public class CabinetMapper {
         return AbonnementCabinet.builder()
                 .montant(dto.getMontant())
                 .typePeriode(dto.getTypePeriode())
-                .statut(AbonnementStatus.ACTIF) // Default, logic in service will refine
+                .statut(AbonnementStatus.ACTIF) 
                 .build();
     }
 

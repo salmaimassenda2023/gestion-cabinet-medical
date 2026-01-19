@@ -15,7 +15,7 @@ public class LigneOrdonnanceMedicament {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idLigne;
-    private String idMedicament; // Référence externe (MongoDB ID)
+    private String idMedicament; 
     private String nomMedicament;
     private String posologie;
     private String duree;

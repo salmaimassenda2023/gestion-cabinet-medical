@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,9 +23,7 @@ public class UtilisateurController {
 
     private final UtilisateurService utilisateurService;
 
-    // ============================================================
     // ENDPOINT DE BOOTSTRAP - À UTILISER UNE SEULE FOIS (PUBLIC)
-    // ============================================================
     @PostMapping("/bootstrap/superadmin")
     public ResponseEntity<UtilisateurResponse> bootstrapSuperAdmin(@Valid @RequestBody UtilisateurRequest request) {
         log.info("🚀 Bootstrap SUPER_ADMIN");
@@ -40,18 +40,14 @@ public class UtilisateurController {
         return ResponseEntity.status(HttpStatus.CREATED).body(utilisateurService.createUtilisateur(request));
     }
 
-    // ============================================================
     // ENDPOINT D'INSCRIPTION PUBLIC (MEDECIN)
-    // ============================================================
     @PostMapping("/register/medecin")
     public ResponseEntity<UtilisateurResponse> registerMedecin(@Valid @RequestBody UtilisateurRequest request) {
         log.info("Inscription médecin public: {}", request.getLogin());
         return ResponseEntity.status(HttpStatus.CREATED).body(utilisateurService.registerMedecin(request));
     }
 
-    // ============================================================
     // CRUD UTILISATEURS
-    // ============================================================
 
     /**
      * Créer un utilisateur
@@ -65,13 +61,23 @@ public class UtilisateurController {
     }
 
     /**
-     * Récupérer l'utilisateur connecté
-     * Accessible par: Tous les utilisateurs authentifiés
+     * Get current user (without signature to avoid LOB issues)
+     * Accessible by: All authenticated users
      */
     @GetMapping("/me")
     public ResponseEntity<UtilisateurResponse> getCurrentUser() {
-        log.info("Récupération utilisateur connecté");
+        log.info("📋 GET /me - Fetching current user (light version)");
         return ResponseEntity.ok(utilisateurService.getCurrentUser());
+    }
+
+    /**
+     * Get current user WITH signature
+     * Accessible by: All authenticated users
+     */
+    @GetMapping("/me/with-signature")
+    public ResponseEntity<UtilisateurResponse> getCurrentUserWithSignature() {
+        log.info("📋 GET /me/with-signature - Fetching current user with signature");
+        return ResponseEntity.ok(utilisateurService.getCurrentUserWithSignature());
     }
 
     /**
@@ -123,7 +129,6 @@ public class UtilisateurController {
      * Accessible par: SUPER_ADMIN et ADMIN
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<Void> deleteUtilisateur(@PathVariable Long id) {
         log.info("Suppression utilisateur: {}", id);
         utilisateurService.deleteUtilisateur(id);
@@ -135,7 +140,6 @@ public class UtilisateurController {
      * Accessible par: SUPER_ADMIN, ADMIN, ou l'utilisateur lui-même
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN') or @utilisateurService.isCurrentUser(#id)")
     public ResponseEntity<UtilisateurResponse> updateUtilisateur(
             @PathVariable Long id,
             @Valid @RequestBody UtilisateurUpdateRequest request) {
@@ -160,9 +164,7 @@ public class UtilisateurController {
         return ResponseEntity.ok(utilisateurService.updateUserStatus(id, newStatus));
     }
 
-    // ============================================================
     // ENDPOINT INTERNE / SYNCHRONISATION (CABINET)
-    // ============================================================
     @PutMapping("/{id}/cabinet")
     public ResponseEntity<Void> updateCabinetId(
             @PathVariable Long id,

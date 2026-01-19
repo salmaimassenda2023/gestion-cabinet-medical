@@ -167,3 +167,168 @@
 .btn-icon.delete:hover {
     background: #fee2e2;
 }
+.patient-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.patient-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.name-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-meta {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.contact-info {
+    font-size: 13px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.contact-item i {
+    color: #666;
+    width: 16px;
+}
+
+.mutuelle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+}
+
+.mutuelle-num {
+    font-size: 12px;
+    color: #666;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* Style pour les badges de mutuelle */
+.badge.mutuelle {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Style pour les tags de genre */
+.gender-tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.gender-tag.male {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.gender-tag.female {
+    background-color: #fce4ec;
+    color: #c2185b;
+}
+
+/* Loading, Error, Empty States */
+.loading-state,
+.error-state,
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+}
+
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-state i {
+    font-size: 48px;
+    color: #e74c3c;
+    margin-bottom: 20px;
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: #95a5a6;
+    margin-bottom: 20px;
+}
+
+.btn-retry {
+    margin-top: 20px;
+    padding: 8px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.loading-text,
+.error-text {
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.loading-text i,
+.error-text i {
+    margin-right: 5px;
+}
+
+.error-text {
+    color: #e74c3c;
+}
+
+.retry-btn {
+    margin-left: 10px;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+/* Désactiver les boutons pendant le chargement */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

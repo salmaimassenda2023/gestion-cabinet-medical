@@ -13,11 +13,27 @@ export class PricingSectionComponent {
   constructor(private router: Router) { }
 
   navigateToOnboarding(plan: string) {
-    this.router.navigate(['/onboarding'], { queryParams: { plan } }); // Updated path to match likely route
+    const planDetails = this.plans.find(p => p.name.toLowerCase() === plan.toLowerCase());
+    if (planDetails) {
+      localStorage.setItem('selected_plan', JSON.stringify({
+        name: plan,
+        price: this.getPlanPrice(plan),
+        period: planDetails.period,
+        typePeriode: plan.toLowerCase() === 'monthly' ? 'MENSUEL' : 'ANNUEL'
+      }));
+    }
+    this.router.navigate(['/onboarding'], { queryParams: { plan: plan.toLowerCase() } });
+  }
+
+  getPlanPrice(planName: string): number {
+    const plan = this.plans.find(p => p.name.toLowerCase() === planName.toLowerCase());
+    if (!plan) return 0;
+    
+    const priceMatch = plan.price.match(/\d+/);
+    return priceMatch ? parseFloat(priceMatch[0]) : 0;
   }
 
   plans = [
-    
     {
       name: "Monthly",
       price: "350 DH",
@@ -34,9 +50,9 @@ export class PricingSectionComponent {
       cta: "Start",
     },
     {
-      name: "Manual",
+      name: "Annual",
       price: "3000 DH",
-      period: "/an",
+      period: "/year",
       description: "Full access for growing clinics",
       features: [
         "Unlimited appointments",

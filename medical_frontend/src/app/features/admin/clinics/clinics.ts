@@ -28,7 +28,7 @@ export class ClinicsComponent implements OnInit {
     allClinics: Clinic[] = [];
 
     doctors = [
-        { id: '1', name: 'Dr. John Doe' }, // Ideally fetch doctors from API too
+        { id: '1', name: 'Dr. John Doe' }, 
         { id: '2', name: 'Dr. Sarah Connor' },
         { id: '3', name: 'Dr. Michael Smith' },
         { id: '4', name: 'Dr. Emma Watson' }
@@ -48,21 +48,31 @@ export class ClinicsComponent implements OnInit {
         this.loadClinics();
     }
 
-    loadClinics() {
-        this.cabinetService.getAllCabinets().subscribe(cabinets => {
+loadClinics() {
+    this.cabinetService.getAllCabinets().subscribe({
+        next: (cabinets) => {
+            console.log('Loaded cabinets:', cabinets); 
+            
             this.allClinics = cabinets.map(c => ({
                 id: c.id.toString(),
-                logo: c.logo || 'assets/clinic-1.png', // Placeholder if null
+                logo: c.logo || 'assets/clinic-1.png',
                 name: c.nom,
                 address: c.adresse,
-                phone: c.numTel,
-                specialty: c.specialite || 'General', // Specialty field mismatch in CabinetResponse vs Clinic
-                doctor: 'Dr. Assigned', // CabinetResponse might not have doctor name directly
-                status: 'active' // CabinetResponse missing status, assuming active
+                phone: c.numTel || '', 
+                specialty: c.specialite || 'General',
+                doctor:(c.medecinPrenom && c.medecinNom ? `${c.medecinPrenom} ${c.medecinNom}` : 
+                       (c.medecinId ? `Doctor ID: ${c.medecinId}` : 'Not Assigned')),
+                status: 'active' 
             }));
+            
             this.clinics = [...this.allClinics];
-        });
-    }
+            console.log('Mapped clinics:', this.clinics); 
+        },
+        error: (err) => {
+            console.error('Error loading clinics:', err);
+        }
+    });
+}
 
     get filteredClinics(): Clinic[] {
         let filtered = this.clinics;
@@ -105,8 +115,8 @@ export class ClinicsComponent implements OnInit {
             nom: newClinicData.name,
             adresse: newClinicData.address,
             numTel: newClinicData.phone,
-            emailContact: 'contact@example.com', // Placeholder or add to form
-            tarifConsultation: 300, // Default or add to form
+            emailContact: 'contact@example.com', 
+            tarifConsultation: 300, 
             specialite: newClinicData.specialty || 'General'
         };
 
@@ -168,7 +178,6 @@ export class ClinicsComponent implements OnInit {
 
     confirmLogout(): void {
         console.log('Logging out...');
-        // Implement actual logout logic here
         this.isLogoutModalOpen = false;
     }
 }

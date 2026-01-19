@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
  */
 @FeignClient(
         name = "patient-service",
-        url = "http://localhost:8084",  // ✅ URL sans path
+        url = "http://localhost:8084",  
         fallback = PatientClientFallback.class
 )
 public interface PatientClient {

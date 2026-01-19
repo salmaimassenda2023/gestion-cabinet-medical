@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class DossierPatientDTO {
     // Patient Info
+    private Long idPatient;
     private String nom;
     private String prenom;
     private String email;
@@ -26,11 +27,5 @@ public class DossierPatientDTO {
     private String groupeSanguin;
     private String remarques;
     private LocalDateTime dateCreation;
-    // We might need a simplistic structure for documents if not available in notif
-    // service,
-    // or just ignore them for now to avoid compilation errors if DocumentMedicalDTO
-    // is missing.
-    // Let's assume we can skip documents or use Object for now to be safe, or just
-    // list generic.
-    // private List<DocumentMedicalDTO> documents;
+
 }

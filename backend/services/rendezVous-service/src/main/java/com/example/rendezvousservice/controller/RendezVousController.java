@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/api/rendezvous")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
 public class RendezVousController {
 
     private final IRendezVousService service;
@@ -34,7 +33,7 @@ public class RendezVousController {
     @PostMapping
     public ResponseEntity<RendezVousDTO> createRendezVous(
             @Valid @RequestBody CreateRendezVousDTO dto) {
-        log.info("📝 POST /api/rendezvous - Création d'un rendez-vous");
+        log.info("POST /api/rendezvous - Création d'un rendez-vous");
         RendezVousDTO created = service.createRendezVous(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -45,7 +44,7 @@ public class RendezVousController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<RendezVousDTO> getRendezVous(@PathVariable Long id) {
-        log.info("📖 GET /api/rendezvous/{} - Détails du rendez-vous", id);
+        log.info("GET /api/rendezvous/{} - Détails du rendez-vous", id);
         RendezVousDTO rendezVous = service.getRendezVous(id);
         return ResponseEntity.ok(rendezVous);
     }
@@ -58,7 +57,7 @@ public class RendezVousController {
     public ResponseEntity<RendezVousDTO> updateRendezVous(
             @PathVariable Long id,
             @Valid @RequestBody UpdateRendezVousDTO dto) {
-        log.info("✏️ PUT /api/rendezvous/{} - Modification du rendez-vous", id);
+        log.info("PUT /api/rendezvous/{} - Modification du rendez-vous", id);
         RendezVousDTO updated = service.updateRendezVous(id, dto);
         return ResponseEntity.ok(updated);
     }
@@ -69,7 +68,7 @@ public class RendezVousController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRendezVous(@PathVariable Long id) {
-        log.info("🗑️ DELETE /api/rendezvous/{} - Annulation du rendez-vous", id);
+        log.info("DELETE /api/rendezvous/{} - Annulation du rendez-vous", id);
         service.deleteRendezVous(id);
         return ResponseEntity.noContent().build();
     }
@@ -82,7 +81,7 @@ public class RendezVousController {
     public ResponseEntity<RendezVousDTO> changeStatut(
             @PathVariable Long id,
             @Valid @RequestBody ChangeStatutDTO dto) {
-        log.info("🔄 PUT /api/rendezvous/{}/statut - Changement de statut", id);
+        log.info("PUT /api/rendezvous/{}/statut - Changement de statut", id);
         RendezVousDTO updated = service.changeStatut(id, dto);
         return ResponseEntity.ok(updated);
     }
@@ -96,7 +95,7 @@ public class RendezVousController {
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<RendezVousDTO>> getRendezVousByPatient(
             @PathVariable Long patientId) {
-        log.info("🔍 GET /api/rendezvous/patient/{} - RDV du patient", patientId);
+        log.info("GET /api/rendezvous/patient/{} - RDV du patient", patientId);
         List<RendezVousDTO> rendezVousList = service.getRendezVousByPatient(patientId);
         return ResponseEntity.ok(rendezVousList);
     }
@@ -109,7 +108,7 @@ public class RendezVousController {
     public ResponseEntity<List<RendezVousDTO>> getRendezVousByMedecinAndDate(
             @PathVariable Long medecinId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        log.info("🔍 GET /api/rendezvous/medecin/{}/date/{} - RDV du médecin", medecinId, date);
+        log.info("GET /api/rendezvous/medecin/{}/date/{} - RDV du médecin", medecinId, date);
         List<RendezVousDTO> rendezVousList = service.getRendezVousByMedecinAndDate(medecinId, date);
         return ResponseEntity.ok(rendezVousList);
     }
@@ -121,7 +120,7 @@ public class RendezVousController {
     @GetMapping("/medecin/{medecinId}/aujourdhui")
     public ResponseEntity<List<RendezVousDTO>> getRendezVousDuJour(
             @PathVariable Long medecinId) {
-        log.info("📅 GET /api/rendezvous/medecin/{}/aujourdhui - RDV du jour", medecinId);
+        log.info("GET /api/rendezvous/medecin/{}/aujourdhui - RDV du jour", medecinId);
         List<RendezVousDTO> rendezVousList = service.getRendezVousDuJour(medecinId);
         return ResponseEntity.ok(rendezVousList);
     }
@@ -136,7 +135,7 @@ public class RendezVousController {
     public ResponseEntity<DisponibilitesDTO> getDisponibilites(
             @PathVariable Long medecinId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        log.info("📋 GET /api/rendezvous/medecin/{}/disponibilites?date={}", medecinId, date);
+        log.info("GET /api/rendezvous/medecin/{}/disponibilites?date={}", medecinId, date);
         DisponibilitesDTO disponibilites = service.getDisponibilites(medecinId, date);
         return ResponseEntity.ok(disponibilites);
     }
@@ -150,7 +149,7 @@ public class RendezVousController {
     @GetMapping("/liste-attente/medecin/{medecinId}")
     public ResponseEntity<List<RendezVousDTO>> getListeAttente(
             @PathVariable Long medecinId) {
-        log.info("📝 GET /api/rendezvous/liste-attente/medecin/{} - Liste d'attente", medecinId);
+        log.info("GET /api/rendezvous/liste-attente/medecin/{} - Liste d'attente", medecinId);
         List<RendezVousDTO> listeAttente = service.getListeAttente(medecinId);
         return ResponseEntity.ok(listeAttente);
     }
@@ -161,7 +160,7 @@ public class RendezVousController {
      */
     @PostMapping("/{id}/ajouter-attente")
     public ResponseEntity<RendezVousDTO> ajouterEnListeAttente(@PathVariable Long id) {
-        log.info("➕ POST /api/rendezvous/{}/ajouter-attente - Ajout à la liste d'attente", id);
+        log.info("POST /api/rendezvous/{}/ajouter-attente - Ajout à la liste d'attente", id);
         RendezVousDTO updated = service.ajouterEnListeAttente(id);
         return ResponseEntity.ok(updated);
     }
@@ -172,7 +171,7 @@ public class RendezVousController {
      */
     @PostMapping("/{id}/retirer-attente")
     public ResponseEntity<RendezVousDTO> retirerDeListeAttente(@PathVariable Long id) {
-        log.info("➖ POST /api/rendezvous/{}/retirer-attente - Retrait de la liste d'attente", id);
+        log.info("POST /api/rendezvous/{}/retirer-attente - Retrait de la liste d'attente", id);
         RendezVousDTO updated = service.retirerDeListeAttente(id);
         return ResponseEntity.ok(updated);
     }
@@ -183,8 +182,11 @@ public class RendezVousController {
      */
     @GetMapping("/liste-attente/suivant/{medecinId}")
     public ResponseEntity<RendezVousDTO> getPatientSuivant(@PathVariable Long medecinId) {
-        log.info("👤 GET /api/rendezvous/liste-attente/suivant/{} - Patient suivant", medecinId);
+        log.info("GET /api/rendezvous/liste-attente/suivant/{} - Patient suivant", medecinId);
         RendezVousDTO patientSuivant = service.getPatientSuivant(medecinId);
+        if (patientSuivant == null) {
+            return ResponseEntity.noContent().build();
+        }
         return ResponseEntity.ok(patientSuivant);
     }
 
@@ -196,6 +198,6 @@ public class RendezVousController {
      */
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok("✅ RendezVous Service is UP and running!");
+        return ResponseEntity.ok("RendezVous Service is UP and running!");
     }
 }

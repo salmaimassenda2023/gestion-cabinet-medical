@@ -26,7 +26,7 @@ export class SecretaryProfileComponent implements OnInit {
             lastName: ['', Validators.required],
             email: [{ value: '', disabled: true }, [Validators.required, Validators.email]],
             phone: ['', Validators.required],
-            address: [{ value: 'N/A', disabled: true }] // Not stored in utilisateur-service yet
+            address: [{ value: 'N/A', disabled: true }] 
         });
 
         this.passwordForm = this.fb.group({

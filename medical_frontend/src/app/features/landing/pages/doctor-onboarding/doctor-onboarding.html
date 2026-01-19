@@ -1,9 +1,66 @@
 <div class="onboarding-container">
-    <div class="onboarding-card">
+    <!-- Success Dialog -->
+<div class="dialog-overlay" *ngIf="showSuccessDialog">
+    <div class="dialog success-dialog">
+        <!-- Animated checkmark -->
+        <svg class="checkmark" viewBox="0 0 52 52">
+            <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+        
+        <h3 class="dialog-title">{{ dialogTitle }}</h3>
+        <p class="dialog-message">{{ dialogMessage }}</p>
+        
+        <div class="dialog-actions">
+            <button class="btn-success-gradient" (click)="onDialogAction()">
+                <span>{{ dialogAction || 'Go to Login' }}</span>
+                <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Optional decorative elements -->
+        <div class="sparkle" style="top: 20%; left: 15%; animation-delay: 0.2s;"></div>
+        <div class="sparkle" style="top: 30%; right: 20%; animation-delay: 0.5s;"></div>
+        <div class="sparkle" style="bottom: 40%; left: 25%; animation-delay: 0.8s;"></div>
+    </div>
+</div>
 
+    <!-- Error Dialog -->
+    <div class="dialog-overlay" *ngIf="showErrorDialog">
+        <div class="dialog error-dialog">
+            <div class="dialog-icon error">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <h3 class="dialog-title">{{ dialogTitle }}</h3>
+            <p class="dialog-message">{{ dialogMessage }}</p>
+            <div class="dialog-actions">
+                <button class="btn-secondary" (click)="closeDialog('error')">
+                    Cancel
+                </button>
+                <button class="btn-primary-gradient" (click)="onDialogAction()" *ngIf="dialogAction">
+                    {{ dialogAction }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="isLoading">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p class="loading-message">{{ loadingMessage }}</p>
+        </div>
+    </div>
+
+    <div class="onboarding-card">
         <!-- Header -->
         <div class="header">
-            <h2 class="title">Clinic Setup</h2>
             <div class="steps-indicator">
                 <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
                     <div class="step-circle">1</div>
@@ -29,52 +86,74 @@
 
         <!-- Content -->
         <div class="step-content">
-
             <!-- Step 1: Personal Info -->
             <form [formGroup]="personalForm" *ngIf="currentStep === 1" class="form-grid">
-                <h3 class="step-title">Personal Information</h3>
+                <div class="step-header">
+                    <h3 class="step-title">Personal Information</h3>
+                    <p class="step-subtitle">Set up your doctor profile</p>
+                </div>
 
                 <div class="input-group">
-                    <label>Username</label>
-                    <input type="text" formControlName="username" placeholder="DrUser123">
+                    <label>Username <span class="required">*</span></label>
+                    <input type="text" formControlName="username" placeholder="DrUser123"
+                        [class.invalid]="personalForm.get('username')?.invalid && personalForm.get('username')?.touched">
+                    <div class="validation-message">
+                        {{ getValidationMessage(personalForm.get('username'), 'Username') }}
+                    </div>
                 </div>
+
                 <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" formControlName="password" placeholder="••••••••">
+                    <label>Password <span class="required">*</span></label>
+                    <input type="password" formControlName="password" placeholder="••••••••"
+                        [class.invalid]="personalForm.get('password')?.invalid && personalForm.get('password')?.touched">
+                    
+                    <div class="validation-message">
+                        {{ getValidationMessage(personalForm.get('password'), 'Password') }}
+                    </div>
                 </div>
 
                 <div class="row">
                     <div class="input-group">
-                        <label>First Name</label>
-                        <input type="text" formControlName="firstName" placeholder="John">
+                        <label>First Name <span class="required">*</span></label>
+                        <input type="text" formControlName="firstName" placeholder="John"
+                            [class.invalid]="personalForm.get('firstName')?.invalid && personalForm.get('firstName')?.touched">
+                        <div class="validation-message">
+                            {{ getValidationMessage(personalForm.get('firstName'), 'First Name') }}
+                        </div>
                     </div>
                     <div class="input-group">
-                        <label>Last Name</label>
-                        <input type="text" formControlName="lastName" placeholder="Doe">
+                        <label>Last Name <span class="required">*</span></label>
+                        <input type="text" formControlName="lastName" placeholder="Doe"
+                            [class.invalid]="personalForm.get('lastName')?.invalid && personalForm.get('lastName')?.touched">
+                        <div class="validation-message">
+                            {{ getValidationMessage(personalForm.get('lastName'), 'Last Name') }}
+                        </div>
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Phone Number</label>
-                    <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000">
+                    <label>Phone Number <span class="required">*</span></label>
+                    <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000"
+                        [class.invalid]="personalForm.get('tel')?.invalid && personalForm.get('tel')?.touched">
+                    <div class="validation-message">
+                        {{ getValidationMessage(personalForm.get('tel'), 'Phone') }}
+                    </div>
                 </div>
 
                 <div class="signature-section">
-                    <label>Signature</label>
+                    <label>Signature <span class="required">*</span></label>
                     <div class="tabs">
                         <button type="button" class="tab" [class.active]="signatureMode === 'draw'"
                             (click)="setSignatureMode('draw')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-right: 6px;">
+                                stroke-width="2">
                                 <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                             </svg> Draw
                         </button>
                         <button type="button" class="tab" [class.active]="signatureMode === 'upload'"
                             (click)="setSignatureMode('upload')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-right: 6px;">
+                                stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="17 8 12 3 7 8"></polyline>
                                 <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -85,134 +164,193 @@
                     <div class="signature-area" *ngIf="signatureMode === 'draw'">
                         <canvas #signatureCanvas width="400" height="150" (mousedown)="startDrawing($event)"
                             (mousemove)="draw($event)" (mouseup)="stopDrawing()" (mouseleave)="stopDrawing()"
-                            (touchstart)="startDrawing($event)" (touchmove)="draw($event)"
-                            (touchend)="stopDrawing()"></canvas>
-                        <button type="button" class="clear-btn" (click)="clearSignature()">Clear</button>
+                            (touchstart)="startDrawing($event)" (touchmove)="draw($event)" (touchend)="stopDrawing()"
+                            [class.invalid]="personalForm.get('signature')?.invalid">
+                        </canvas>
+                        <button type="button" class="btn-secondary clear-btn" (click)="clearSignature()">
+                            Clear Signature
+                        </button>
                     </div>
 
                     <div class="upload-area" *ngIf="signatureMode === 'upload'">
-                        <input type="file" (change)="onFileSelected($event, 'signature')" accept="image/*">
+                        <div class="file-upload">
+                            <input type="file" id="signatureUpload" (change)="onFileSelected($event, 'signature')"
+                                accept="image/*">
+                            <label for="signatureUpload" class="upload-label">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Upload Signature</span>
+                            </label>
+                        </div>
                         <div *ngIf="signatureImage" class="preview">
                             <img [src]="signatureImage" alt="Signature Preview" height="50">
+                            <button type="button" class="btn-remove" (click)="clearSignature()">
+                                Remove
+                            </button>
                         </div>
+                    </div>
+                    <div class="validation-message" *ngIf="personalForm.get('signature')?.invalid">
+                        {{ getValidationMessage(personalForm.get('signature'), 'Signature') }}
                     </div>
                 </div>
             </form>
 
             <!-- Step 2: Clinic Info -->
             <form [formGroup]="clinicForm" *ngIf="currentStep === 2" class="form-grid">
-                <h3 class="step-title">Clinic Details</h3>
+                <div class="step-header">
+                    <h3 class="step-title">Clinic Details</h3>
+                    <p class="step-subtitle">Configure your medical practice</p>
+                </div>
 
                 <div class="input-group">
-                    <label>Clinic Name</label>
-                    <input type="text" formControlName="name" placeholder="City Health Clinic">
-                    <div *ngIf="clinicForm.get('name')?.invalid && clinicForm.get('name')?.touched"
-                        class="error-message">
-                        Clinic Name is required.
+                    <label>Clinic Name <span class="required">*</span></label>
+                    <input type="text" formControlName="name" placeholder="City Health Clinic"
+                        [class.invalid]="clinicForm.get('name')?.invalid && clinicForm.get('name')?.touched">
+                    <div class="validation-message">
+                        {{ getValidationMessage(clinicForm.get('name'), 'Clinic Name') }}
                     </div>
                 </div>
 
                 <div class="input-group logo-upload">
                     <label>Clinic Logo</label>
-                    <input type="file" (change)="onFileSelected($event, 'logo')" accept="image/*">
+                    <div class="file-upload">
+                        <input type="file" id="logoUpload" (change)="onFileSelected($event, 'logo')" accept="image/*">
+                        <label for="logoUpload" class="upload-label">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span>Upload Logo</span>
+                        </label>
+                    </div>
                     <div *ngIf="logoPreview" class="preview logo-preview">
                         <img [src]="logoPreview" alt="Logo Preview">
+                        <button type="button" class="btn-remove"
+                            (click)="logoPreview = null; clinicForm.patchValue({logo: null})">
+                            Remove
+                        </button>
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Specialty</label>
-                    <input type="text" formControlName="specialty" placeholder="Cardiology">
-                    <div *ngIf="clinicForm.get('specialty')?.invalid && clinicForm.get('specialty')?.touched"
-                        class="error-message">
-                        Specialty is required.
+                    <label>Specialty <span class="required">*</span></label>
+                    <input type="text" formControlName="specialty" placeholder="Cardiology"
+                        [class.invalid]="clinicForm.get('specialty')?.invalid && clinicForm.get('specialty')?.touched">
+                    <div class="validation-message">
+                        {{ getValidationMessage(clinicForm.get('specialty'), 'Specialty') }}
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Address</label>
-                    <textarea formControlName="address" rows="2" placeholder="123 Medical Blvd, Suite 100"></textarea>
-                    <div *ngIf="clinicForm.get('address')?.invalid && clinicForm.get('address')?.touched"
-                        class="error-message">
-                        Address is required.
+                    <label>Address <span class="required">*</span></label>
+                    <textarea formControlName="address" rows="2" placeholder="123 Medical Blvd, Suite 100"
+                        [class.invalid]="clinicForm.get('address')?.invalid && clinicForm.get('address')?.touched"></textarea>
+                    <div class="validation-message">
+                        {{ getValidationMessage(clinicForm.get('address'), 'Address') }}
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="input-group">
-                        <label>Clinic Phone</label>
-                        <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000">
-                        <div *ngIf="clinicForm.get('tel')?.invalid && clinicForm.get('tel')?.touched"
-                            class="error-message">
-                            Clinic Phone is required.
+                        <label>Clinic Phone <span class="required">*</span></label>
+                        <input type="tel" formControlName="tel" placeholder="+1 (555) 000-0000"
+                            [class.invalid]="clinicForm.get('tel')?.invalid && clinicForm.get('tel')?.touched">
+                        <div class="validation-message">
+                            {{ getValidationMessage(clinicForm.get('tel'), 'Phone') }}
                         </div>
                     </div>
                     <div class="input-group">
-                        <label>Max Patients/Day</label>
-                        <input type="number" formControlName="maxPatients" placeholder="20">
-                        <div *ngIf="clinicForm.get('maxPatients')?.invalid && clinicForm.get('maxPatients')?.touched"
-                            class="error-message">
-                            <span *ngIf="clinicForm.get('maxPatients')?.errors?.['required']">Max Patients/Day is
-                                required.</span>
-                            <span *ngIf="clinicForm.get('maxPatients')?.errors?.['min']">Must be at least 1.</span>
+                        <label>Max Patients/Day <span class="required">*</span></label>
+                        <input type="number" formControlName="maxPatients" placeholder="20"
+                            [class.invalid]="clinicForm.get('maxPatients')?.invalid && clinicForm.get('maxPatients')?.touched">
+                        <div class="validation-message">
+                            {{ getValidationMessage(clinicForm.get('maxPatients'), 'Max Patients') }}
                         </div>
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Consultation Duration (mins)</label>
-                    <input type="number" formControlName="consultationTime" placeholder="30">
-                    <div *ngIf="clinicForm.get('consultationTime')?.invalid && clinicForm.get('consultationTime')?.touched"
-                        class="error-message">
-                        <span *ngIf="clinicForm.get('consultationTime')?.errors?.['required']">Consultation Duration is
-                            required.</span>
-                        <span *ngIf="clinicForm.get('consultationTime')?.errors?.['min']">Must be at least 5
-                            minutes.</span>
+                    <label>Consultation Duration (mins) <span class="required">*</span></label>
+                    <input type="number" formControlName="consultationTime" placeholder="30"
+                        [class.invalid]="clinicForm.get('consultationTime')?.invalid && clinicForm.get('consultationTime')?.touched">
+                    <div class="validation-message">
+                        {{ getValidationMessage(clinicForm.get('consultationTime'), 'Consultation Duration') }}
                     </div>
                 </div>
             </form>
 
             <!-- Step 3: Services & Pricing -->
             <form [formGroup]="servicesForm" *ngIf="currentStep === 3" class="form-grid">
-                <h3 class="step-title">Services & Pricing</h3>
-                <p class="subtitle">Define your clinic's service offerings.</p>
+                <div class="step-header">
+                    <h3 class="step-title">Services & Pricing</h3>
+                    <p class="step-subtitle">Define your clinic's service offerings</p>
+                </div>
 
                 <div class="input-group">
-                    <label>General Consultation Price (DH)</label>
+                    <label>General Consultation Price (DH) <span class="required">*</span></label>
                     <div class="price-input-wrapper">
-                        <input type="number" formControlName="generalPrice" placeholder="150" class="price-input">
+                        <span class="currency-symbol">DH</span>
+                        <input type="number" formControlName="generalPrice" placeholder="150" class="price-input"
+                            [class.invalid]="servicesForm.get('generalPrice')?.invalid && servicesForm.get('generalPrice')?.touched">
+                    </div>
+                    <div class="validation-message">
+                        {{ getValidationMessage(servicesForm.get('generalPrice'), 'Price') }}
                     </div>
                 </div>
 
                 <div class="services-section">
                     <label class="section-label">Additional Services</label>
+                    <p class="section-description">Add any specialized services your clinic offers</p>
 
                     <div class="services-list" formArrayName="additionalServices">
                         <div *ngFor="let service of additionalServices.controls; let i=index" [formGroupName]="i"
-                            class="service-card animate-fade-in">
-                            <div class="service-inputs">
-                                <input type="text" formControlName="name" placeholder="Service Name (e.g. ECG)"
-                                    class="service-name-input">
-                            </div>
-                            <div class="service-inputs">
-                                <input type="number" formControlName="price" placeholder="Price"
-                                        class="price-input">
+                            class="service-card">
+                            <div class="service-header">
+                                <h4 class="service-title">Service #{{ i + 1 }}</h4>
+                                <button type="button" class="btn-icon remove-service-btn" (click)="removeService(i)"
+                                    title="Remove Service">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
                             </div>
 
-                            <button type="button" class="remove-service-btn" (click)="removeService(i)"
-                                title="Remove Service">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
+                            <div class="service-inputs">
+                                <div class="input-group">
+                                    <label>Service Name <span class="required">*</span></label>
+                                    <input type="text" formControlName="name" placeholder="ECG, X-Ray, Ultrasound..."
+                                        class="service-name-input"
+                                        [class.invalid]="service.get('name')?.invalid && service.get('name')?.touched">
+                                    <div class="validation-message">
+                                        {{ getValidationMessage(service.get('name'), 'Service Name') }}
+                                    </div>
+                                </div>
+
+                                <div class="input-group">
+                                    <label>Price (DH) <span class="required">*</span></label>
+                                    <input type="number" formControlName="price" placeholder="250" class="price-input"
+                                        [class.invalid]="service.get('price')?.invalid && service.get('price')?.touched">
+                                    <div class="validation-message">
+                                        {{ getValidationMessage(service.get('price'), 'Price') }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            
                         </div>
                     </div>
 
-                    <button type="button" class="add-service-btn" (click)="addService()">
+                    <button type="button" class="btn-outline add-service-btn" (click)="addService()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
@@ -223,38 +361,51 @@
 
             <!-- Step 4: Payment -->
             <form [formGroup]="paymentForm" *ngIf="currentStep === 4" class="form-grid">
-                <h3 class="step-title">Payment Method</h3>
-                <p class="subtitle">Enter your card details for the {{ selectedPlan | titlecase }} subscription.</p>
-
-                <div class="payment-summary">
-                    <span class="summary-label">Total per month</span>
-                    <span class="summary-amount">{{ selectedPlan === 'monthly' ? '$29.99' : '$0.00' }}</span>
+                <div class="step-header">
+                    <h3 class="step-title">Payment Method</h3>
+                    <p class="step-subtitle">Enter your card details for the {{ selectedPlan | titlecase }} subscription
+                    </p>
                 </div>
 
-                <div class="input-group">
-                    <label>Name on Card</label>
-                    <input type="text" formControlName="cardName" placeholder="JOHN DOE">
-                    <div *ngIf="paymentForm.get('cardName')?.invalid && paymentForm.get('cardName')?.touched"
-                        class="error-message">
-                        Name is required.
+                <div class="payment-summary">
+                    <div class="summary-details">
+                        <span class="summary-label">Plan</span>
+                        <span class="summary-value">{{ selectedPlan === 'monthly' ? 'Monthly' : 'Annual' }}</span>
+                    </div>
+                    <div class="summary-details">
+                        <span class="summary-label">Total per {{ selectedPlan === 'monthly' ? 'month' : 'year' }}</span>
+                        <span class="summary-amount">{{ selectedPlan === 'monthly' ? '350 DH' : '3000 DH' }}</span>
                     </div>
                 </div>
 
-                <div class="input-group"
-                    style="padding: 12px; background: #fff; border: 1px solid var(--border); border-radius: 0.75rem;">
-                    <ngx-stripe-card [options]="cardOptions" [elementsOptions]="elementsOptions"
-                        [containerClass]="'stripe-card-container'">
-                    </ngx-stripe-card>
+                <div class="input-group">
+                    <label>Name on Card <span class="required">*</span></label>
+                    <input type="text" formControlName="cardName" placeholder="JOHN DOE"
+                        [class.invalid]="paymentForm.get('cardName')?.invalid && paymentForm.get('cardName')?.touched">
+                    <div class="validation-message">
+                        {{ getValidationMessage(paymentForm.get('cardName'), 'Card Name') }}
+                    </div>
                 </div>
-            </form>
 
+                <div class="input-group">
+                    <label>Card Details <span class="required">*</span></label>
+                    <div class="stripe-card-container">
+                        <ngx-stripe-card [options]="cardOptions" [elementsOptions]="elementsOptions">
+                        </ngx-stripe-card>
+                    </div>
+                    <div class="validation-message">
+                        Please enter valid card details
+                    </div>
+                </div>
+
+                
+            </form>
         </div>
 
         <!-- Footer Actions -->
         <div class="actions">
-            <button *ngIf="currentStep > 1" (click)="prevStep()" class="btn-back">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <button *ngIf="currentStep > 1" (click)="prevStep()" class="btn-secondary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg> Back
@@ -262,20 +413,28 @@
 
             <div class="spacer"></div>
 
-            <button (click)="nextStep()" class="btn-primary-gradient btn-next">
-                <span *ngIf="currentStep < totalSteps">Next Step</span>
-                <span *ngIf="currentStep === totalSteps">Complete Setup</span>
-                <svg *ngIf="currentStep < totalSteps" class="btn-icon" width="20" height="20" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button (click)="nextStep()" class="btn-primary" [disabled]="isLoading">
+                <span *ngIf="isLoading" class="btn-loading">
+                    <span class="spinner-small"></span>
+                    Processing...
+                </span>
+                <span *ngIf="!isLoading">
+                    <span *ngIf="currentStep < totalSteps">Next Step</span>
+                    <span *ngIf="currentStep === totalSteps">Complete Setup</span>
+                </span>
+                <svg *ngIf="!isLoading && currentStep < totalSteps" class="btn-icon" width="20" height="20"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
                 </svg>
-                <svg *ngIf="currentStep === totalSteps" class="btn-icon" width="20" height="20" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg *ngIf="!isLoading && currentStep === totalSteps" class="btn-icon" width="20" height="20"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
             </button>
         </div>
 
+        <!-- Progress Indicator -->
+        
     </div>
 </div>

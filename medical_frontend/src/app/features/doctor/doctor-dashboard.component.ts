@@ -4,7 +4,12 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { IncomeChartComponent } from '../admin/admin-dashboard/income-chart.component';
-
+import { NotificationBellComponent } from '../../shared/components/Notification-bell/notification-bell/notification-bell';
+import { PatientService } from '../../core/services/patient.service';
+import { RendezvousService } from '../../core/services/rendezvous.service';
+import { PaiementService } from '../../core/services/paiement.service';
+import { UtilisateurService } from '../auth/services/utilisateur.service';
+import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-doctor-dashboard',
   standalone: true,
@@ -13,7 +18,8 @@ import { IncomeChartComponent } from '../admin/admin-dashboard/income-chart.comp
     RouterModule,
     FormsModule,
     HeaderComponent,
-    IncomeChartComponent
+    IncomeChartComponent,
+    NotificationBellComponent
   ],
   templateUrl: './doctor-dashboard.html',
   styleUrls: ['./doctor-dashboard.css']
@@ -39,9 +45,79 @@ export class DoctorDashboardComponent implements OnInit {
   weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   yearCalendar: { name: string, days: { day: number | null, isToday: boolean }[] }[] = [];
   currentYear: number = new Date().getFullYear();
+  isLoadingStats = false;
+
+  constructor(
+    private patientService: PatientService,
+    private rendezvousService: RendezvousService,
+    private paiementService: PaiementService,
+    private utilisateurService: UtilisateurService
+  ) { }
 
   ngOnInit() {
     this.generateYearCalendar();
+    this.loadStats();
+    this.loadDoctorInfo();
+  }
+
+  loadDoctorInfo() {
+    this.utilisateurService.getCurrentUser().subscribe({
+      next: (user) => {
+        this.doctorName = user.nom || 'Doctor';
+      },
+      error: (err) => console.error('Error loading doctor info:', err)
+    });
+  }
+
+  loadStats() {
+    this.isLoadingStats = true;
+
+    this.utilisateurService.getCurrentUser().subscribe({
+      next: (user) => {
+        const medecinId = user.idUtilisateur;
+        const cabinetId = user.idCabinet || 1;
+
+        forkJoin({
+          patients: this.patientService.getPatientsByCabinet(cabinetId),
+          appointments: this.rendezvousService.getRendezVousDuJour(medecinId),
+          factures: this.paiementService.getFacturesByCabinet(cabinetId)
+        }).subscribe({
+          next: ({ patients, appointments, factures }) => {
+            // Total Patients
+            this.statsItems[0].value = patients.length.toString();
+
+            // Today's Patients
+            this.statsItems[1].value = appointments.length.toString();
+
+            // Monthly Revenue
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            const monthlyRevenue = factures
+              .filter(f => {
+                const fDate = new Date(f.dateFacture);
+                return fDate.getMonth() === currentMonth &&
+                  fDate.getFullYear() === currentYear &&
+                  f.statut === 'PAYEE';
+              })
+              .reduce((sum, f) => sum + (f.montantTotal || 0), 0);
+
+            this.statsItems[2].value = `${monthlyRevenue.toLocaleString()} MAD`;
+
+            this.isLoadingStats = false;
+          },
+          error: (err) => {
+            console.error('Error loading dashboard stats:', err);
+            this.isLoadingStats = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error getting current user for stats:', err);
+        this.isLoadingStats = false;
+      }
+    });
   }
 
   generateYearCalendar() {

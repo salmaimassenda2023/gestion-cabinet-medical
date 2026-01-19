@@ -23,4 +23,5 @@ public class CabinetResponseDTO {
     private Boolean actif;
     private AbonnementResponseDTO abonnement;
     private List<ServiceConsultationDTO> services;
+
 }

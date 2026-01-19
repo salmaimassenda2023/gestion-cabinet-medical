@@ -1,9 +1,6 @@
 package com.example.cabinetservice.enums;
 
 
-/**
- * Enum - Statut Paiement
- */
 public enum StatutPaiement {
     EN_ATTENTE("En attente"),
     VALIDE("Validé"),

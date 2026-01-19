@@ -24,19 +24,15 @@ public class RendezVous {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ✅ CORRECTION : Ajout de name = "id_patient"
     @Column(name = "id_patient", nullable = false)
     private Long idPatient;
 
-    // ✅ CORRECTION : Ajout de name = "id_medecin"
     @Column(name = "id_medecin", nullable = false)
     private Long idMedecin;
 
-    // ✅ CORRECTION : Ajout de name = "date_rdv"
     @Column(name = "date_rdv", nullable = false)
     private LocalDate dateRdv;
 
-    // ✅ CORRECTION : Ajout de name = "heure_rdv"
     @Column(name = "heure_rdv", nullable = false)
     private LocalTime heureRdv;
 
@@ -72,8 +68,6 @@ public class RendezVous {
     protected void onUpdate() {
         dateModification = LocalDateTime.now();
     }
-
-    // ========== Règles Métier ==========
 
     public boolean peutEtreModifie() {
         return statut != StatutRendezVous.TERMINE &&

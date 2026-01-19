@@ -7,15 +7,14 @@ import { environment } from '../../../environments/environment';
     providedIn: 'root'
 })
 export class ConsultationService {
-    private apiUrl = `${environment.apiUrl}/consultation`;
+    private apiUrl = `${environment.apiUrl}/api/consultation`;
 
     constructor(private http: HttpClient) { }
 
     createConsultation(consultation: any): Observable<any> {
         return this.http.post<any>(this.apiUrl, consultation);
     }
-
-    getConsultation(id: number): Observable<any> {
+     getConsultation(id: number): Observable<any> {
         return this.http.get<any>(`${this.apiUrl}/${id}`);
     }
 
@@ -58,7 +57,7 @@ export class ConsultationService {
         return this.http.get(`${this.apiUrl}/${idConsultation}/ordonnances/examens/${idOrdonnance}/pdf`, { responseType: 'blob' });
     }
 
-    // Invoices (already in PaiementService but re-exposing here if needed)
+    // Invoices 
     createFacture(idConsultation: number, facture: any): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/${idConsultation}/factures`, facture);
     }

@@ -2,7 +2,7 @@ CREATE TABLE abonnements_cabinet (
     id_abonnement BIGSERIAL PRIMARY KEY,
     date_debut TIMESTAMP NOT NULL,
     date_fin TIMESTAMP NOT NULL,
-    statut VARCHAR(50) DEFAULT 'SUSPENDU',
+    statut VARCHAR(50) ,
     montant DOUBLE PRECISION NOT NULL,
     type_periode VARCHAR(50) NOT NULL,
     cabinet_id BIGINT UNIQUE,

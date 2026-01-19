@@ -7,37 +7,98 @@ import { environment } from '../../../environments/environment';
     providedIn: 'root'
 })
 export class PaiementService {
-    private apiUrl = `${environment.apiUrl}/consultation`;
+    private apiUrl = `${environment.apiUrl}/api`;
 
     constructor(private http: HttpClient) { }
 
+    /**
+     * Get all factures for a specific cabinet (PRIMARY METHOD)
+     * This is the recommended method for multi-cabinet systems
+     */
+    getFacturesByCabinet(cabinetId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/consultation/cabinet/${cabinetId}/factures`);
+    }
+
+    /**
+     * Get all factures across all cabinets (ADMIN ONLY)
+     * Use this only for admin dashboards or reports
+     */
+    getAllFactures(): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/consultation/factures/all`);
+    }
+
+    /**
+     * Get factures for a specific consultation
+     */
     getFacturesByConsultation(consultationId: number): Observable<any[]> {
-        return this.http.get<any[]>(`${this.apiUrl}/${consultationId}/factures`);
+        return this.http.get<any[]>(`${this.apiUrl}/consultation/${consultationId}/factures`);
     }
 
-    getFacturesByPatient(patientId: number): Observable<any[]> {
-        // This depends on whether there's a dedicated search endpoint for factures across consultations
-        // For now, using the search endpoint if applicable or just searching consultations
-        return this.http.get<any[]>(`${this.apiUrl}/search?idPatient=${patientId}`);
-    }
-
+    /**
+     * Create a new facture for a consultation
+     */
     createFacture(consultationId: number, factureData: any): Observable<any> {
-        return this.http.post<any>(`${this.apiUrl}/${consultationId}/factures`, factureData);
+        return this.http.post<any>(
+            `${this.apiUrl}/consultation/${consultationId}/factures`,
+            factureData
+        );
     }
 
-    updateFactureStatut(factureId: number, statut: string): Observable<any> {
-        return this.http.patch<any>(`${this.apiUrl}/factures/${factureId}/statut?statut=${statut}`, {});
+    /**
+     * Update facture status (EN_ATTENTE, PAYEE, ANNULEE)
+     */
+    updateFactureStatut(idFacture: number, statut: string): Observable<any> {
+        return this.http.patch<any>(
+            `${this.apiUrl}/consultation/factures/${idFacture}/statut`,
+            null,
+            { params: { statut } }
+        );
     }
 
-    generateFacturePDF(factureId: number): Observable<Blob> {
-        return this.http.get(`${this.apiUrl}/factures/${factureId}/pdf`, { responseType: 'blob' });
+    /**
+     * Delete a facture
+     */
+    deleteFacture(idFacture: number): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/consultation/factures/${idFacture}`);
     }
 
-    searchConsultations(idPatient?: number, dateDebut?: string, dateFin?: string): Observable<any[]> {
-        let params = '';
-        if (idPatient) params += `idPatient=${idPatient}&`;
-        if (dateDebut) params += `dateDebut=${dateDebut}&`;
-        if (dateFin) params += `dateFin=${dateFin}&`;
-        return this.http.get<any[]>(`${this.apiUrl}/search?${params}`);
+    /**
+     * Generate and download facture PDF
+     */
+    generateFacturePDF(idFacture: number): Observable<Blob> {
+        return this.http.get(
+            `${this.apiUrl}/consultation/factures/${idFacture}/pdf`,
+            { responseType: 'blob' }
+        );
+    }
+
+  
+    /**
+     * Get terminated consultations (ready for invoicing)
+     */
+    getTerminatedConsultations(): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/consultation/terminated`);
+    }
+
+    /**
+     * Get consultation details including patient info
+     */
+    getConsultationWithDetails(consultationId: number): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/consultation/${consultationId}`);
+    }
+
+  
+    /**
+     * Get all active cabinet services
+     */
+    getCabinetServices(cabinetId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/cabinet/${cabinetId}/services`);
+    }
+
+    /**
+     * Get services for a specific cabinet
+     */
+    getServicesByCabinet(cabinetId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/cabinet/${cabinetId}/services`);
     }
 }

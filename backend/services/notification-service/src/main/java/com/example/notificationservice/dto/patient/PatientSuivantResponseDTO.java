@@ -4,7 +4,6 @@ package com.example.notificationservice.dto.patient;
 import com.example.notificationservice.dto.BaseNotificationDTO;
 import com.example.notificationservice.dto.patient.DossierPatientDTO;
 import lombok.*;
-// Réponse pour le frontend (Médecin)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

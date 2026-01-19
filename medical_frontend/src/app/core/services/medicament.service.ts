@@ -14,7 +14,7 @@ export interface Medicament {
     providedIn: 'root'
 })
 export class MedicamentService {
-    private apiUrl = `${environment.apiUrl}/medicament`;
+    private apiUrl = `${environment.apiUrl}/api/medicament`;
 
     constructor(private http: HttpClient) { }
 

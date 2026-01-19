@@ -1,0 +1,206 @@
+<div class="payment-form-overlay" *ngIf="isOpen" (click)="closeForm()">
+  <div class="payment-form-container" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="payment-form-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+        <div class="header-text">
+          <h2>Process New Payment</h2>
+          <p>Create invoice for patient consultation</p>
+        </div>
+      </div>
+      <button class="close-btn" (click)="closeForm()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading form data...</p>
+    </div>
+
+    <!-- Form Content -->
+    <div *ngIf="!isLoading" class="payment-form-content">
+      
+      <!-- Step 1: Select Patient -->
+<div class="form-section">
+    <label class="form-label">
+        <i class="fas fa-user"></i>
+        Select Patient
+    </label>
+    <select [(ngModel)]="selectedPatientId" 
+            (change)="onPatientChange()"
+            class="form-control"
+            [class.placeholder]="!selectedPatientId">
+        
+        <option [value]="null" disabled selected>Select a patient</option>
+        
+        <!-- CHANGE: patient.id instead of patient.idPatient -->
+        <option *ngFor="let patient of patients" [value]="patient.id">
+            {{ patient.prenom }} {{ patient.nom }} 
+            <span *ngIf="patient.dateNaissance">({{ calculateAge(patient.dateNaissance) }} years)</span>
+        </option>
+    </select>
+</div>
+ <!-- Step 2: Select Consultation -->
+<div class="form-section" *ngIf="selectedPatientId">
+    <label class="form-label">
+        <i class="fas fa-stethoscope"></i>
+        Select Consultation
+    </label>
+    
+    <div *ngIf="selectedPatientConsultations.length === 0" class="empty-state">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>No consultations found for this patient.</p>
+    </div>
+    
+    <div *ngIf="selectedPatientConsultations.length > 0">
+        <select [(ngModel)]="selectedConsultationId" 
+                (change)="onConsultationChange()"
+                class="form-control"
+                [class.placeholder]="!selectedConsultationId">
+            <option [value]="null" disabled selected>Choose a consultation...</option>
+            <option *ngFor="let consultation of selectedPatientConsultations; let i = index" 
+                    [value]="consultation.idConsultation">
+                {{ getConsultationDisplayText(consultation, i) }}
+            </option>
+        </select>
+        
+        
+    </div>
+</div>
+     <!-- Step 3: Services Section -->
+      <div class="form-section" *ngIf="selectedConsultationId">
+        <label class="form-label">
+          <i class="fas fa-list-check"></i>
+          Services Included
+        </label>
+        
+        <!-- Fixed Consultation Service (Always included, not selectable) -->
+        <div class="services-fixed">
+          <div class="service-card fixed">
+            <div class="service-check">
+              <i class="fas fa-check-circle included-icon"></i>
+            </div>
+            <div class="service-info">
+              <h4>Consultation Service</h4>
+              <p>Standard medical consultation</p>
+              <div class="service-price-container">
+                <span class="service-price">{{ consultationBasePrice }} MAD</span>
+                <span class="service-badge">Included</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Services (Optional) -->
+        <div class="additional-services-section" *ngIf="cabinetServices.length > 0">
+          <label class="form-sub-label">
+            <i class="fas fa-plus-circle"></i>
+            Additional Services (Optional)
+          </label>
+          
+          <p class="form-help">Select additional services to include in the invoice</p>
+          
+          <div class="services-grid">
+            <div *ngFor="let service of cabinetServices" 
+                 class="service-card additional"
+                 [class.selected]="isServiceSelected(service)"
+                 (click)="toggleService(service)">
+              <div class="service-check">
+                <i class="fas fa-check-circle" *ngIf="isServiceSelected(service)"></i>
+                <i class="far fa-circle" *ngIf="!isServiceSelected(service)"></i>
+              </div>
+              <div class="service-info">
+                <h4>{{ service.nomService }}</h4>
+                <p *ngIf="service.description">{{ service.description }}</p>
+                <span class="service-price">{{ service.prix }} MAD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message if no additional services available -->
+        <div class="empty-services-info" *ngIf="cabinetServices.length === 0">
+          <i class="fas fa-info-circle"></i>
+          <p>No additional services configured for this cabinet. Invoice will include consultation only.</p>
+        </div>
+      </div>
+
+      <!-- Selected Services Summary - Only show if additional services selected -->
+      <div class="selected-services" *ngIf="selectedConsultationId && selectedServices.length > 0">
+        <label class="form-label">
+          <i class="fas fa-list"></i>
+          Selected Additional Services
+        </label>
+        <div class="service-list">
+          <div *ngFor="let service of selectedServices; let i = index" class="service-item">
+            <span class="service-name">{{ service.nomService }}</span>
+            <span class="service-price">{{ service.prix }} MAD</span>
+            <button class="btn-remove" (click)="removeService(i)">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Notes -->
+      <div class="form-section" *ngIf="selectedConsultationId">
+        <label class="form-label">
+          <i class="fas fa-sticky-note"></i>
+          Notes (Optional)
+        </label>
+        <textarea [(ngModel)]="invoiceNotes" 
+                  class="form-control"
+                  placeholder="Add any notes for this invoice..."
+                  rows="3"></textarea>
+      </div>
+
+      <!-- Payment Summary -->
+      <div class="payment-summary" *ngIf="selectedConsultationId">
+        <div class="summary-header">
+          <h3>Invoice Summary</h3>
+        </div>
+        <div class="summary-row">
+          <span>Consultation Service</span>
+          <span>{{ consultationBasePrice }} MAD</span>
+        </div>
+        <div class="summary-row" *ngIf="selectedServices.length > 0">
+          <span>Additional Services</span>
+          <span>{{ servicesTotal }} MAD</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total">
+          <span>Total Amount</span>
+          <span>{{ totalAmount }} MAD</span>
+        </div>
+        
+        <!-- Show note if no additional services -->
+        <div class="summary-note" *ngIf="selectedServices.length === 0">
+          <small>
+            <i class="fas fa-info-circle"></i>
+            Invoice includes consultation fee only
+          </small>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button class="btn-secondary" (click)="closeForm()" [disabled]="isProcessing">
+          Cancel
+        </button>
+        <button class="btn-primary" 
+                (click)="processPayment()" 
+                [disabled]="!selectedConsultationId || isProcessing || totalAmount <= 0">
+          <i class="fas" [class.fa-spinner]="isProcessing" [class.fa-spin]="isProcessing"
+             [class.fa-file-invoice]="!isProcessing"></i>
+          {{ isProcessing ? 'Processing...' : 'Confirm & Generate Bill' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

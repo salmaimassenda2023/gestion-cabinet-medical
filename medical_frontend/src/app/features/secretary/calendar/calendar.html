@@ -3,24 +3,28 @@
         <div class="header-left">
             <h2>{{ monthName }} {{ currentDate.getFullYear() }}</h2>
             <div class="nav-btns">
-                <button (click)="previousMonth()"><i class="fas fa-chevron-left"></i></button>
-                <button (click)="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                <button (click)="previousMonth()" [disabled]="isLoading">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button (click)="nextMonth()" [disabled]="isLoading">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
 
         <div class="header-right">
             <div class="filters">
-                <select [value]="selectedMedecinId" (change)="onMedecinChange($event)" *ngIf="medecins.length > 0">
-                    <option *ngFor="let m of medecins" [value]="m.idUtilisateur">Dr. {{ m.nom }}</option>
-                </select>
-                <select [value]="activeTypeFilter" (change)="setTypeFilter($any($event.target).value)">
+
+                <select [value]="activeTypeFilter" (change)="setTypeFilter($any($event.target).value)"
+                    [disabled]="isLoading">
                     <option value="all">All Types</option>
                     <option value="CONSULTATION">Consultation</option>
                     <option value="CONTROLE">Contrôle</option>
                     <option value="URGENCE">Urgence</option>
                     <option value="AUTRE">Autre</option>
                 </select>
-                <select [value]="activeStatusFilter" (change)="setStatusFilter($any($event.target).value)">
+                <select [value]="activeStatusFilter" (change)="setStatusFilter($any($event.target).value)"
+                    [disabled]="isLoading">
                     <option value="all">All Status</option>
                     <option value="PLANIFIE">Planifié</option>
                     <option value="CONFIRME">Confirmé</option>
@@ -30,50 +34,90 @@
                     <option value="ANNULE">Annulé</option>
                 </select>
             </div>
-            <button class="btn-primary" (click)="openAddModal()">Add Appointment</button>
+            <button class="btn-primary" (click)="openAddModal()" [disabled]="isLoading || !selectedMedecinId">
+                Add Appointment
+            </button>
+            <button class="btn-secondary" (click)="loadAppointments()" [disabled]="isLoading">
+                <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+            </button>
         </div>
     </div>
 
-    <div class="calendar-grid">
-        <div class="weekday" *ngFor="let day of weekDays">{{ day }}</div>
-        <div class="day-cell" *ngFor="let day of days" [class.today]="day === 19 && currentDate.getMonth() === 11">
-            <span class="day-num">{{ day }}</span>
-            <div class="day-appointments">
-                <!-- Simple dot for days with appointments in this month -->
-                <div class="appointment-dot" *ngIf="day % 5 === 0"></div>
-            </div>
-        </div>
+    <!-- Loading State -->
+    <div *ngIf="isLoading && appointments.length === 0" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading appointments...</p>
     </div>
 
-    <div class="appointments-sidebar">
-        <h3>Appointments ({{ filteredAppointments.length }})</h3>
-        <div class="appointments-list">
-            <div class="appointment-item" *ngFor="let appt of filteredAppointments" (click)="editAppointment(appt)">
-                <div class="appt-time">{{ appt.heureRdv }}</div>
-                <div class="appt-info">
-                    <span class="patient-name">{{ appt.patientName }}</span>
-                    <span class="appt-type">{{ appt.motif }}</span>
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !isLoading" class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ errorMessage }}</p>
+        <button (click)="loadInitialData()" class="btn-retry">Retry</button>
+    </div>
+
+    <!-- No Medecins State -->
+    <div *ngIf="!isLoading && !errorMessage && medecins.length === 0" class="empty-state">
+        <i class="fas fa-user-md"></i>
+        <p>No medecins found in this cabinet.</p>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading && !errorMessage && medecins.length > 0">
+        <div class="calendar-grid">
+            <div class="weekday" *ngFor="let day of weekDays">{{ day }}</div>
+            <div class="day-cell" *ngFor="let day of days"
+                [class.today]="day === currentDate.getDate() && currentDate.getMonth() === currentDate.getMonth()"
+                [class.selected]="selectedDay === day" (click)="onDayClick(day)">
+                <span class="day-num">{{ day }}</span>
+                <div class="day-appointments">
+                    <div class="appointment-dot" *ngIf="hasAppointmentsOnDay(day)"></div>
                 </div>
-                <div class="appt-status" [class]="appt.statut">{{ appt.statut }}</div>
             </div>
-            <div class="no-appointments" *ngIf="filteredAppointments.length === 0">
-                No appointments found for selected filters.
+        </div>
+
+
+        <div class="appointments-sidebar">
+            <h3>
+                Appointments
+                <span *ngIf="selectedDay">
+                    for {{ monthName }} {{ selectedDay }}, {{ currentDate.getFullYear() }}
+                </span>
+                <span *ngIf="!selectedDay">
+                    (Select a day)
+                </span>
+                ({{ filteredAppointments.length }})
+            </h3>
+            <div class="appointments-list">
+                <div class="appointment-item" *ngFor="let appt of filteredAppointments" (click)="editAppointment(appt)"
+                    [class.selected]="selectedAppointment?.id === appt.id">
+                    <div class="appt-time">{{ appt.heureRdv }}</div>
+                    <div class="appt-info">
+                        <span class="patient-name">{{ appt.patientName }}</span>
+                        <span class="appt-type">{{ appt.motif }}</span>
+                    </div>
+                    <div class="appt-status" [class]="appt.statut?.toLowerCase()">{{ appt.statut }}</div>
+                </div>
+                <div class="no-appointments" *ngIf="filteredAppointments.length === 0">
+                    No appointments found for selected filters.
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Add/Edit Appointment Modal -->
-    <app-modal [isOpen]="isModalOpen" [title]="selectedAppointment ? 'Edit Appointment' : 'New Appointment'"
-        [showFooter]="false" (close)="closeAddModal()">
-        <app-appointment-form [appointment]="selectedAppointment" [idCabinet]="idCabinet"
-            (save)="onSaveAppointment($event)" (delete)="onDeleteAppointment()"
-            (cancel)="closeAddModal()"></app-appointment-form>
-    </app-modal>
-
-    <!-- Delete Confirmation Modal -->
-    <app-modal [isOpen]="isDeleteModalOpen" title="Delete Appointment" confirmText="Delete" [isDestructive]="true"
-        (close)="isDeleteModalOpen = false" (confirm)="confirmDelete()">
-        <p>Are you sure you want to delete the appointment for <strong>{{ selectedAppointment?.patientName }}</strong>?
-            This action cannot be undone.</p>
-    </app-modal>
 </div>
+
+<!-- Add/Edit Appointment Modal -->
+<app-modal [isOpen]="isModalOpen" [title]="selectedAppointment ? 'Edit Appointment' : 'New Appointment'"
+    [showFooter]="false" (close)="closeAddModal()">
+    <app-appointment-form [appointment]="selectedAppointment" [idCabinet]="idCabinet" (save)="onSaveAppointment($event)"
+        (delete)="onDeleteAppointment()" (cancel)="closeAddModal()">
+    </app-appointment-form>
+</app-modal>
+
+<!-- Delete Confirmation Modal -->
+<app-modal [isOpen]="isDeleteModalOpen" title="Delete Appointment" confirmText="Delete" [isDestructive]="true"
+    (close)="isDeleteModalOpen = false" (confirm)="confirmDelete()">
+    <p>Are you sure you want to delete the appointment for <strong>{{ selectedAppointment?.patientName }}</strong>?
+        This action cannot be undone.</p>
+</app-modal>

@@ -1,9 +1,8 @@
 package com.example.rendezvousservice.dto;
 
-
 import com.example.rendezvousservice.enums.MotifRendezVous;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,12 +17,13 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class UpdateRendezVousDTO {
 
-    @Future(message = "La date doit être dans le futur")
+    @NotNull(message = "La date est obligatoire")
+    @FutureOrPresent(message = "La date doit être aujourd'hui ou dans le futur")
     private LocalDate dateRdv;
 
+    @NotNull(message = "L'heure est obligatoire")
     private LocalTime heureRdv;
 
+    @NotNull(message = "Le motif est obligatoire")
     private MotifRendezVous motif;
-
-
 }

@@ -12,7 +12,7 @@ import { Clinic } from '../clinic-table/clinic-table.component';
 })
 export class ClinicFormComponent implements OnInit, OnChanges {
     @Input() clinic?: Clinic;
-    @Input() doctors: { id: string, name: string }[] = []; // List of doctors for selection
+    @Input() doctors: { id: string, name: string }[] = []; 
     @Output() save = new EventEmitter<Partial<Clinic>>();
     @Output() cancel = new EventEmitter<void>();
 

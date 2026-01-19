@@ -13,123 +13,355 @@
             </svg>
             Consultation
         </div>
-        <button class="btn-done" (click)="onDone()" [disabled]="!nextPatientRendezVous">DONE</button>
+        <button class="btn-dossier" 
+                (click)="viewMedicalDossier()" 
+                [disabled]="!patientInfo.id"
+                title="View & Edit Medical Dossier">
+            <i class="fas fa-folder-open"></i>
+            Medical Dossier
+        </button>
+        <button class="btn-done" (click)="onDone()" 
+                [disabled]="isLoadingState || !patientInfo.id || consultationForm.invalid || !hasServices">
+            <span *ngIf="!isSaving">DONE</span>
+            <i *ngIf="isSaving" class="fas fa-spinner fa-spin"></i>
+        </button>
     </div>
 
-    <div class="consultation-layout">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p>Loading patient information...</p>
+        </div>
+    </div>
+
+    <div class="consultation-layout" *ngIf="!isLoading">
         <!-- Left Side: Information & Medical Record -->
         <div class="info-side">
             <section class="info-section">
-                <h2>Information</h2>
-                <div class="info-card" *ngIf="nextPatientRendezVous">
-                    <p class="patient-main">{{ patientInfo.name }} . {{ patientInfo.gender }} . {{ patientInfo.age }}
-                        years</p>
-                    <p><span class="label">Blood Type:</span> {{ patientInfo.bloodType }}</p>
-                    <p><span class="label">Allergy:</span> {{ patientInfo.allergy }}</p>
-                    <p><span class="label">Current treatment:</span> {{ patientInfo.currentTreatment }}</p>
-                    <p><span class="label">Lifestyle:</span> {{ patientInfo.lifestyle }}</p>
-                </div>
-                <div class="info-card no-patient" *ngIf="!nextPatientRendezVous">
-                    <p>No patient in consultation.</p>
+                <h2>Patient Information</h2>
+                <div class="info-card" *ngIf="patientInfo.id">
+                    <div class="patient-header">
+                        <p class="patient-main">{{ patientInfo.name }}</p>
+                        <div class="patient-details">
+                            <span class="detail-badge">{{ patientInfo.gender }}</span>
+                            <span class="detail-badge">{{ patientInfo.age }} years</span>
+                        </div>
+                    </div>
+                    
+                    <div class="medical-info-grid">
+                        <div class="info-item">
+                            <span class="label">Blood Type:</span>
+                            <span class="value">{{ patientInfo.bloodType }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Allergies:</span>
+                            <span class="value">{{ patientInfo.allergy }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Medical History -->
+                    <div class="medical-history-section" *ngIf="patientInfo.antecedentsMedicaux || patientInfo.antecedentsChirurgicaux">
+                        <h4>Medical History</h4>
+                        <div *ngIf="patientInfo.antecedentsMedicaux" class="history-item">
+                            <strong>Medical:</strong> {{ patientInfo.antecedentsMedicaux }}
+                        </div>
+                        <div *ngIf="patientInfo.antecedentsChirurgicaux" class="history-item">
+                            <strong>Surgical:</strong> {{ patientInfo.antecedentsChirurgicaux }}
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <section class="record-section">
                 <h2>Medical Record</h2>
                 <div class="record-card">
-                    <div class="history-block">
-                        <h3>History</h3>
-                        <p><span class="label">Medical:</span> Asthma (Known)</p>
-                        <p><span class="label">Surgical:</span> None</p>
+                    <!-- Consultation History -->
+                    <div class="history-section">
+                        <h3>
+                            <i class="fas fa-history"></i>
+                            Consultation History
+                            <span class="badge">{{ medicalHistory.length }}</span>
+                        </h3>
+                        
+                        <div class="history-list" *ngIf="medicalHistory.length > 0">
+                            <div *ngFor="let item of medicalHistory" class="history-item">
+                                <div class="history-date">{{ item.dateConsultation | date:'medium' }}</div>
+                                <div class="history-type">
+                                    <span class="type-tag">Consultation</span>
+                                </div>
+                                <div class="history-diagnostic">
+                                    <strong>Diagnostic:</strong> {{ item.diagnostic }}
+                                </div>
+                                <div *ngIf="item.observation" class="history-details">
+                                    {{ item.observation }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div *ngIf="medicalHistory.length === 0" class="empty-history">
+                            <i class="fas fa-file-medical"></i>
+                            <p>No previous consultations</p>
+                        </div>
                     </div>
 
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Diagnostic</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let item of medicalHistory">
-                                <td>{{ item.date }}</td>
-                                <td><span class="type-tag">{{ item.type }}</span></td>
-                                <td><span class="diag-tag">{{ item.diagnostic }}</span></td>
-                            </tr>
-                            <tr *ngIf="medicalHistory.length === 0">
-                                <td colspan="3" class="no-data">No previous history.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="documents-block">
-                        <h3>Documents</h3>
-                        <div class="doc-tag">none</div>
+                    <!-- Documents -->
+                    <div class="documents-section">
+                        <h3>
+                            <i class="fas fa-file-medical"></i>
+                            Medical Documents
+                            <span class="badge">{{ documents.length }}</span>
+                        </h3>
+                        
+                        <div class="documents-list" *ngIf="documents.length > 0">
+                            <div *ngFor="let doc of documents" class="doc-item">
+                                <div class="doc-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="doc-info">
+                                    <div class="doc-name">{{ doc.nom || 'Document' }}</div>
+                                    <div class="doc-meta">
+                                        <span class="doc-type">{{ doc.type || 'Medical' }}</span>
+                                        <span class="doc-date">{{ doc.dateUpload | date:'shortDate' }}</span>
+                                    </div>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-download" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div *ngIf="documents.length === 0" class="empty-docs">
+                            <i class="fas fa-folder-open"></i>
+                            <p>No documents available</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
+            <!-- Print Actions -->
             <div class="print-actions">
-                <button class="btn-print">Print the Medical prescription</button>
-                <button class="btn-print">Print the additional exams prescription</button>
+                <button class="btn-print" (click)="printMedicationPrescription()" 
+                        [disabled]="prescription.length === 0 || isLoadingState">
+                    <i class="fas fa-prescription"></i>
+                    Print Medication Prescription
+                </button>
+                <button class="btn-print" (click)="printExamPrescription()" 
+                        [disabled]="isLoadingState || !(
+                            consultationForm.get('additionalExams')?.value?.bloodTests ||
+                            consultationForm.get('additionalExams')?.value?.urineTests ||
+                            consultationForm.get('additionalExams')?.value?.ecg ||
+                            consultationForm.get('additionalExams')?.value?.xray ||
+                            consultationForm.get('additionalExams')?.value?.mri ||
+                            consultationForm.get('additionalExams')?.value?.ctScan ||
+                            consultationForm.get('additionalExams')?.value?.ultrasound
+                        )">
+                    <i class="fas fa-microscope"></i>
+                    Print Exam Prescription
+                </button>
             </div>
         </div>
 
         <!-- Right Side: Examination & Prescriptions -->
         <div class="exam-side" [formGroup]="consultationForm">
             <div class="form-card">
-                <h3>Clinical Examination</h3>
-                <div class="vital-signs">
-                    <div class="input-group">
-                        <label>Temperature (°C)</label>
-                        <input type="text" formControlName="temperature" placeholder="37.0">
+                <!-- Services Section - NEW -->
+                <div class="services-section">
+                    <div class="section-header">
+                        <h3>
+                            <i class="fas fa-hand-holding-medical"></i>
+                            Services Provided
+                        </h3>
                     </div>
-                    <div class="input-group">
-                        <label>Blood Pressure (mmHg)</label>
-                        <input type="text" formControlName="bloodPressure" placeholder="120/80">
+
+                    <!-- Available Services -->
+                    <div class="available-services">
+                        <div class="service-grid">
+                            <div *ngFor="let service of availableServices" 
+                                 class="service-card"
+                                 (click)="addService(service)">
+                                <div class="service-icon">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <div class="service-info">
+                                    <div class="service-name">{{ service.nom }}</div>
+                                    <div class="service-price">{{ service.prix }} MAD</div>
+                                    <div class="service-desc" *ngIf="service.description">
+                                        {{ service.description }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Selected Services -->
+                    <div class="selected-services" *ngIf="selectedServices.length > 0">
+                        <h4>
+                            <i class="fas fa-check-circle"></i>
+                            Selected Services
+                        </h4>
+                        <div class="selected-services-list">
+                            <div *ngFor="let service of selectedServices; let i = index" 
+                                 class="selected-service-item">
+                                <div class="service-details">
+                                    <div class="service-name-selected">{{ service.nom }}</div>
+                                    <div class="service-price-unit">{{ service.prix }} MAD each</div>
+                                </div>
+                               
+                                <div class="service-subtotal">
+                                    {{ service.sousTotal }} MAD
+                                </div>
+                                <button class="btn-remove-service" 
+                                        (click)="removeService(i)"
+                                        type="button">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="services-total">
+                            <span class="total-label">Total Amount:</span>
+                            <span class="total-amount">{{ totalAmount }} MAD</span>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="empty-services" *ngIf="selectedServices.length === 0">
+                        <i class="fas fa-hand-holding-medical"></i>
+                        <p>No services selected. Click on a service above to add it.</p>
+                    </div>
+                </div>
+
+                <div class="section-divider">
+                    <hr>
+                </div>
+
+                <!-- Clinical Examination -->
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-stethoscope"></i>
+                        Clinical Examination
+                    </h3>
+                </div>
+                
+                <div class="vital-signs-grid">
                     <div class="input-group">
-                        <label>Heart Rate (bpm)</label>
-                        <input type="text" formControlName="heartRate" placeholder="75">
+                        <label>
+                            <i class="fas fa-thermometer-half"></i>
+                            Temperature (°C)
+                        </label>
+                        <input type="number" step="0.1" formControlName="temperature" 
+                               placeholder="37.0" [class.error]="hasError('temperature', 'pattern')">
+                        <div class="error-message" *ngIf="hasError('temperature', 'pattern')">
+                            Please enter a valid temperature (e.g., 37.0)
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            <i class="fas fa-heartbeat"></i>
+                            Blood Pressure (mmHg)
+                        </label>
+                        <input type="text" formControlName="bloodPressure" 
+                               placeholder="120/80" [class.error]="hasError('bloodPressure', 'pattern')">
+                        <div class="error-message" *ngIf="hasError('bloodPressure', 'pattern')">
+                            Format: systolic/diastolic (e.g., 120/80)
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>
+                            <i class="fas fa-heart"></i>
+                            Heart Rate (bpm)
+                        </label>
+                        <input type="number" formControlName="heartRate" 
+                               placeholder="75" [class.error]="hasError('heartRate', 'pattern')">
+                        <div class="error-message" *ngIf="hasError('heartRate', 'pattern')">
+                            Please enter a valid heart rate
+                        </div>
                     </div>
                 </div>
 
                 <div class="input-group full">
-                    <label>Observation</label>
-                    <textarea formControlName="observation" placeholder="Physical signs, lung sounds, etc."></textarea>
+                    <label>
+                        <i class="fas fa-clipboard"></i>
+                        Observation
+                    </label>
+                    <textarea formControlName="observation" rows="3" 
+                              placeholder="Physical signs, lung sounds, patient complaints, etc."></textarea>
                 </div>
 
-                <hr>
+                <div class="section-divider">
+                    <hr>
+                </div>
 
-                <h3>Additional Exams</h3>
+                <!-- Additional Exams -->
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-microscope"></i>
+                        Additional Exams
+                    </h3>
+                </div>
+                
                 <div class="exams-grid" formGroupName="additionalExams">
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="bloodTests"> Blood tests
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="bloodTests">
+                        <i class="fas fa-tint"></i>
+                        <span>Blood tests</span>
                     </label>
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="urineTests"> Urine tests
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="urineTests">
+                        <i class="fas fa-flask"></i>
+                        <span>Urine tests</span>
                     </label>
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="ecg"> ECG
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="ecg">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>ECG</span>
                     </label>
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="xray"> X-ray
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="xray">
+                        <i class="fas fa-x-ray"></i>
+                        <span>X-ray</span>
                     </label>
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="mri"> MRI
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="mri">
+                        <i class="fas fa-brain"></i>
+                        <span>MRI</span>
                     </label>
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="ctScan"> CT scan
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="ctScan">
+                        <i class="fas fa-cogs"></i>
+                        <span>CT scan</span>
                     </label>
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="ultrasound"> Ultrasound
+                    <label class="checkbox-item">
+                        <input type="checkbox" formControlName="ultrasound">
+                        <i class="fas fa-wave-square"></i>
+                        <span>Ultrasound</span>
                     </label>
                 </div>
 
-                <hr>
+                <div class="section-divider">
+                    <hr>
+                </div>
 
-                <h3>Treatment Prescribed <button class="btn-add" (click)="addTreatment()">+</button></h3>
+                <!-- Treatment Prescribed -->
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-prescription"></i>
+                        Treatment Prescribed
+                    </h3>
+                    <button class="btn-add" (click)="addTreatment()" type="button" [disabled]="isLoadingState">
+                        <i class="fas fa-plus"></i> Add Medication
+                    </button>
+                </div>
+                
                 <div class="treatment-table" formArrayName="prescription">
                     <div class="treatment-header">
                         <span>Medicament</span>
@@ -137,42 +369,97 @@
                         <span>Duration</span>
                         <span></span>
                     </div>
-                    <div class="treatment-row" *ngFor="let t of prescription.controls; let i = index"
-                        [formGroupName]="i">
-                        <div class="autocomplete-container">
-                            <input type="text" formControlName="nomMedicament" placeholder="Search medicament...">
-                            <div class="autocomplete-dropdown" *ngIf="showAutocomplete[i]">
-                                <div class="autocomplete-item" *ngFor="let med of medicationsAutocomplete[i]"
-                                    (click)="selectMedicament(i, med)">
-                                    <span class="med-name">{{ med.nom }}</span>
-                                    <span class="med-info">{{ med.forme }} - {{ med.dosage }}</span>
+                    
+                    <div class="treatment-list">
+                        <div class="treatment-row" *ngFor="let t of prescription.controls; let i = index"
+                            [formGroupName]="i">
+                            <div class="medicament-cell">
+                                <div class="autocomplete-container">
+                                    <input type="text" formControlName="nomMedicament" 
+                                           placeholder="Search medicament..."
+                                           [class.error]="hasPrescriptionError(i, 'nomMedicament', 'required')">
+                                    <div class="autocomplete-dropdown" *ngIf="showAutocomplete[i]">
+                                        <div class="autocomplete-item" *ngFor="let med of medicationsAutocomplete[i]"
+                                            (click)="selectMedicament(i, med)">
+                                            <span class="med-name">{{ med.nom }}</span>
+                                            <span class="med-info">{{ med.forme }} - {{ med.dosage }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="error-message" *ngIf="hasPrescriptionError(i, 'nomMedicament', 'required')">
+                                    Medicament name is required
                                 </div>
                             </div>
+                            
+                            <div class="dosage-cell">
+                                <input type="text" formControlName="dosage" placeholder="1 tab 3x/day"
+                                       [class.error]="hasPrescriptionError(i, 'dosage', 'required')">
+                                <div class="error-message" *ngIf="hasPrescriptionError(i, 'dosage', 'required')">
+                                    Dosage is required
+                                </div>
+                            </div>
+                            
+                            <div class="duration-cell">
+                                <input type="text" formControlName="duree" placeholder="7 days"
+                                       [class.error]="hasPrescriptionError(i, 'duree', 'required')">
+                                <div class="error-message" *ngIf="hasPrescriptionError(i, 'duree', 'required')">
+                                    Duration is required
+                                </div>
+                            </div>
+                            
+                            <div class="action-cell">
+                                <button class="btn-remove" (click)="removeTreatment(i)" type="button" 
+                                        [disabled]="isLoadingState">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
-                        <input type="text" formControlName="dosage" placeholder="1 tab 3x/day">
-                        <input type="text" formControlName="duree" placeholder="7 days">
-                        <button class="btn-remove" (click)="removeTreatment(i)">&times;</button>
                     </div>
+                    
                     <div class="no-treatment" *ngIf="prescription.length === 0">
-                        No medication prescribed yet.
+                        <i class="fas fa-pills"></i>
+                        <p>No medication prescribed yet. Click "Add Medication" to start.</p>
                     </div>
                 </div>
 
-                <div class="input-group full">
-                    <label>Final Diagnostic</label>
-                    <textarea formControlName="diagnostic" placeholder="Enter diagnostic here..."></textarea>
+                <div class="section-divider">
+                    <hr>
                 </div>
 
-                <div class="follow-up">
-                    <label class="checkbox-container">
-                        <input type="checkbox" formControlName="needsFollowUp"> Needs a follow-up
+                <!-- Final Diagnostic -->
+                <div class="input-group full">
+                    <label class="required">
+                        <i class="fas fa-diagnoses"></i>
+                        Final Diagnostic *
                     </label>
+                    <textarea formControlName="diagnostic" rows="3" 
+                              placeholder="Enter diagnostic here (e.g., Upper respiratory infection, Hypertension stage 1, etc.)" 
+                              [class.error]="hasError('diagnostic', 'required') || hasError('diagnostic', 'minlength')"></textarea>
+                    <div class="error-message" *ngIf="hasError('diagnostic', 'required')">
+                        Diagnostic is required
+                    </div>
+                    <div class="error-message" *ngIf="hasError('diagnostic', 'minlength')">
+                        Diagnostic must be at least 3 characters
+                    </div>
+                </div>
+
+                <!-- Follow-up -->
+                <div class="follow-up-section">
+                    <label class="checkbox-container">
+                        <input type="checkbox" formControlName="needsFollowUp">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Needs a follow-up</span>
+                    </label>
+                    
                     <div class="follow-up-inputs" *ngIf="consultationForm.get('needsFollowUp')?.value">
                         <select formControlName="followUpType">
-                            <option>Months</option>
-                            <option>Weeks</option>
+                            <option value="Days">Days</option>
+                            <option value="Weeks">Weeks</option>
+                            <option value="Months">Months</option>
+                            <option value="Years">Years</option>
                         </select>
-                        <input type="text" formControlName="followUpValue" placeholder="e.g. 1">
+                        <input type="number" formControlName="followUpValue" placeholder="e.g., 1" min="1">
+                        <span class="follow-up-text">after consultation</span>
                     </div>
                 </div>
             </div>

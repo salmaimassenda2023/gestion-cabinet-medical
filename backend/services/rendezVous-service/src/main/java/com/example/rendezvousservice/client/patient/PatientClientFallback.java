@@ -15,7 +15,7 @@ public class PatientClientFallback implements PatientClient {
 
     @Override
     public PatientInfoDTO getPatientInfo(Long patientId) {
-        log.warn("️ Fallback: Service Patient indisponible pour patient ID: {}", patientId);
+        log.warn("Fallback: Service Patient indisponible pour patient ID: {}", patientId);
 
         return PatientInfoDTO.builder()
                 .id(patientId)
@@ -26,7 +26,7 @@ public class PatientClientFallback implements PatientClient {
 
     @Override
     public DossierMedicalDTO getDossierMedical(Long patientId) {
-        log.warn("⚠️ Fallback: Dossier médical indisponible pour patient ID: {}", patientId);
+        log.warn("Fallback: Dossier médical indisponible pour patient ID: {}", patientId);
 
         return DossierMedicalDTO.builder()
                 .idDossier(null)
