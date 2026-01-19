@@ -36,3 +36,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Java / Backend
+hs_err_pid*.log
+backend/uploads/
